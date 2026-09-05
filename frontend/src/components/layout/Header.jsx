@@ -118,18 +118,19 @@ const Header = ({ onMobileMenuOpen }) => {
 
   return (
     <>
-      <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shadow-xs">
+      <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-3 sm:px-4 lg:px-6 flex items-center justify-between shadow-xs gap-2 min-w-0">
         {/* Left side: Mobile Toggle, Multi-Entity Picker & Search Bar */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 shrink">
           <button
             onClick={onMobileMenuOpen}
-            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden cursor-pointer"
+            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden cursor-pointer shrink-0"
+            aria-label="Open menu"
           >
             <Menu className="w-5 h-5" />
           </button>
 
           {/* Multi-Entity Switcher */}
-          <div className="relative hidden md:block">
+          <div className="relative hidden md:block shrink-0">
             <button
               onClick={() => {
                 setShowEntityDropdown(!showEntityDropdown);
@@ -137,11 +138,11 @@ const Header = ({ onMobileMenuOpen }) => {
                 setShowQuickActionDropdown(false);
                 setShowNotificationsDropdown(false);
               }}
-              className="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200 text-slate-700 transition-all cursor-pointer"
+              className="flex items-center space-x-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200 text-slate-700 transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
-              <Building2 className="w-3.5 h-3.5 text-indigo-600" />
-              <span className="font-bold text-slate-900 truncate max-w-[190px]">{selectedEntity}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <span className="font-bold text-slate-900 truncate max-w-[110px] lg:max-w-[160px] xl:max-w-[200px]">{selectedEntity}</span>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
 
             {showEntityDropdown && (
@@ -164,7 +165,7 @@ const Header = ({ onMobileMenuOpen }) => {
                       <p className="font-semibold">{ent.name}</p>
                       <p className="text-[10px] text-slate-400">{ent.region} • {ent.count}</p>
                     </div>
-                    {selectedEntity === ent.name && <span className="w-2 h-2 rounded-full bg-indigo-600" />}
+                    {selectedEntity === ent.name && <span className="w-2 h-2 rounded-full bg-indigo-600 shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -174,29 +175,31 @@ const Header = ({ onMobileMenuOpen }) => {
           {/* Omnibar / Command Search Trigger Button */}
           <button
             onClick={() => setShowCommandSearch(true)}
-            className="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200/80 text-slate-400 text-xs border border-slate-200 transition-all cursor-pointer min-w-[200px]"
+            className="hidden sm:flex items-center justify-between space-x-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200/80 text-slate-400 text-xs border border-slate-200 transition-all cursor-pointer w-40 lg:w-52 xl:w-60 shrink-0 whitespace-nowrap"
           >
-            <Search className="w-3.5 h-3.5 text-slate-500" />
-            <span className="text-slate-500 text-[11px] font-medium">Quick search or action...</span>
-            <kbd className="hidden lg:inline-block ml-auto text-[10px] font-mono bg-white border border-slate-300 px-1.5 py-0.2 rounded text-slate-600 font-semibold shadow-xs">
+            <div className="flex items-center space-x-2 min-w-0">
+              <Search className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <span className="text-slate-500 text-[11px] font-medium truncate">Search or jump to...</span>
+            </div>
+            <kbd className="hidden lg:inline-block ml-1 text-[10px] font-mono bg-white border border-slate-300 px-1.5 py-0.2 rounded text-slate-600 font-semibold shadow-xs shrink-0">
               ⌘K
             </kbd>
           </button>
         </div>
 
         {/* Right side: Health Status, Quick Action, Notifications, Role Switcher & Profile */}
-        <div className="flex items-center space-x-2.5 sm:space-x-3">
-          {/* Health Status Indicator */}
-          <div className="hidden xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-[11px] font-semibold text-emerald-700">
-            <span className="relative flex h-2 w-2">
+        <div className="flex items-center space-x-2 sm:space-x-2.5 shrink-0">
+          {/* Health Status Indicator (Only visible on wide screens to prevent crowding) */}
+          <div className="hidden 2xl:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-[11px] font-semibold text-emerald-700 shrink-0 whitespace-nowrap">
+            <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span>99.99% Systems Active</span>
+            <span className="whitespace-nowrap">99.99% Systems Active</span>
           </div>
 
           {/* Fast Operational Action Launcher */}
-          <div className="relative hidden sm:block">
+          <div className="relative hidden sm:block shrink-0">
             <button
               onClick={() => {
                 setShowQuickActionDropdown(!showQuickActionDropdown);
@@ -204,11 +207,11 @@ const Header = ({ onMobileMenuOpen }) => {
                 setShowEntityDropdown(false);
                 setShowNotificationsDropdown(false);
               }}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-600/30 transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-600/30 transition-all cursor-pointer shrink-0 whitespace-nowrap"
             >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Quick Action</span>
-              <ChevronDown className="w-3 h-3" />
+              <Zap className="w-3.5 h-3.5 shrink-0" />
+              <span className="whitespace-nowrap">Quick Action</span>
+              <ChevronDown className="w-3 h-3 shrink-0" />
             </button>
 
             {showQuickActionDropdown && (
@@ -261,7 +264,7 @@ const Header = ({ onMobileMenuOpen }) => {
           </div>
 
           {/* Notifications Center */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               onClick={() => {
                 setShowNotificationsDropdown(!showNotificationsDropdown);
@@ -269,7 +272,7 @@ const Header = ({ onMobileMenuOpen }) => {
                 setShowEntityDropdown(false);
                 setShowQuickActionDropdown(false);
               }}
-              className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 relative transition-colors cursor-pointer"
+              className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 relative transition-colors cursor-pointer shrink-0"
             >
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-600"></span>
@@ -304,7 +307,7 @@ const Header = ({ onMobileMenuOpen }) => {
           </div>
 
           {/* Presentation Role Switcher Dropdown */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               onClick={() => {
                 setShowRoleDropdown(!showRoleDropdown);
@@ -312,14 +315,14 @@ const Header = ({ onMobileMenuOpen }) => {
                 setShowQuickActionDropdown(false);
                 setShowNotificationsDropdown(false);
               }}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 roleColors[role] || 'bg-slate-100 text-slate-700'
               }`}
             >
-              <Shield className="w-3.5 h-3.5" />
+              <Shield className="w-3.5 h-3.5 shrink-0" />
               <span className="hidden sm:inline">Role:</span>
-              <span>{role}</span>
-              <ChevronDown className="w-3 h-3 ml-0.5 opacity-70" />
+              <span className="whitespace-nowrap">{role}</span>
+              <ChevronDown className="w-3 h-3 ml-0.5 opacity-70 shrink-0" />
             </button>
 
             {showRoleDropdown && (
@@ -347,7 +350,7 @@ const Header = ({ onMobileMenuOpen }) => {
           </div>
 
           {/* User Avatar & Logout */}
-          <div className="flex items-center space-x-3 pl-2 sm:pl-3 border-l border-slate-200">
+          <div className="flex items-center space-x-2 sm:space-x-3 pl-2 sm:pl-3 border-l border-slate-200 shrink-0">
             <img
               src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`}
               alt={user?.name}
@@ -355,16 +358,16 @@ const Header = ({ onMobileMenuOpen }) => {
                 e.target.onerror = null;
                 e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`;
               }}
-              className="w-8 h-8 rounded-full border border-slate-200 object-cover shadow-xs"
+              className="w-8 h-8 rounded-full border border-slate-200 object-cover shadow-xs shrink-0"
             />
-            <div className="hidden lg:block text-left">
-              <p className="text-xs font-bold text-slate-800 leading-tight">{user?.name || 'User'}</p>
-              <p className="text-[10px] text-slate-400">{user?.email}</p>
+            <div className="hidden xl:block text-left min-w-0">
+              <p className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[110px]">{user?.name || 'User'}</p>
+              <p className="text-[10px] text-slate-400 truncate max-w-[140px]">{user?.email}</p>
             </div>
             <button
               onClick={logout}
               title="Log out"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-0.5 cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-0.5 cursor-pointer shrink-0"
             >
               <LogOut className="w-4 h-4" />
             </button>
