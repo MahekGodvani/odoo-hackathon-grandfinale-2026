@@ -26,6 +26,8 @@ const normalizePayslip = (p) => ({
   net: Number(p.net_salary || p.net || 5850),
   workingDays: Number(p.working_days || 30),
   presentDays: Number(p.present_days || 28),
+  workedDays: Number(p.present_days || p.workedDays || p.working_days || 28),
+  structureName: p.structure_name || p.structureName || 'Standard Regular Structure',
   paidLeaveDays: Number(p.paid_leave_days || 2),
   unpaidLeaveDays: Number(p.unpaid_leave_days || 0),
   bankName: p.bank_name || 'Chase Bank',
@@ -35,11 +37,17 @@ const normalizePayslip = (p) => ({
   emailSent: !!p.email_sent
 });
 
+
 export const payslipApi = {
   getPayslips: async (params = {}) => {
     if (!USE_MOCK_DATA) {
       try {
-        const res = await apiClient.get('/payslips', { params });
+        const queryParams = {
+          ...params,
+          payroll_id: params.payroll_id || params.payrunId,
+          employee_id: params.employee_id || params.employeeId
+        };
+        const res = await apiClient.get('/payslips', { params: queryParams });
         if (res.data?.payslips && Array.isArray(res.data.payslips)) {
           return { data: res.data.payslips.map(normalizePayslip) };
         }
@@ -47,6 +55,7 @@ export const payslipApi = {
         console.warn('Live getPayslips failed, using fallback:', err?.message);
       }
     }
+
     const db = mockDataStore.get();
     let records = [...db.payslips];
     if (params.employeeId) {

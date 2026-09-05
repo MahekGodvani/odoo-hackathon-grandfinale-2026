@@ -80,7 +80,9 @@ const checkOut = async (req, res) => {
 // GET /api/attendance
 const getAttendanceLogs = async (req, res) => {
   try {
-    const { employee_id, month, year, date } = req.query;
+    const employee_id = req.query.employee_id || req.query.employeeId;
+    const { month, year, date } = req.query;
+
 
     let query = `
       SELECT a.*, e.first_name, e.last_name, e.employee_code, e.department

@@ -12,7 +12,8 @@ export const userApi = {
         const res = await apiClient.post('/auth/login', { email, password });
         if (res.data && res.data.success) {
           const user = res.data.user || {};
-          const token = res.data.access_token || res.data.token;
+          const token = res.data.token || res.data.access_token || res.data.tokens?.accessToken;
+
           return {
             data: {
               user: {

@@ -3,7 +3,9 @@ import db from '../config/db.js';
 // GET /api/leaves
 const getLeaveRequests = async (req, res) => {
   try {
-    const { employee_id, status } = req.query;
+    const employee_id = req.query.employee_id || req.query.employeeId;
+    const { status } = req.query;
+
 
     let query = `
       SELECT lr.*, 

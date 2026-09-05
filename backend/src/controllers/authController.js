@@ -149,12 +149,15 @@ export const login = async (req, res) => {
     return res.json({
       success: true,
       message: 'Login successful',
+      token: accessToken,
+      access_token: accessToken,
       tokens: {
         accessToken,
         refreshToken,
         tokenType: 'Bearer',
         expiresIn: 900 // 15 minutes in seconds
       },
+
       user: {
         id: user.id,
         email: user.email,

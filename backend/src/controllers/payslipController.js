@@ -3,7 +3,9 @@ import db from '../config/db.js';
 // GET /api/payslips
 const getPayslips = async (req, res) => {
   try {
-    const { payroll_id, employee_id } = req.query;
+    const payroll_id = req.query.payroll_id || req.query.payrunId;
+    const employee_id = req.query.employee_id || req.query.employeeId;
+
 
     let query = `
       SELECT ps.*, 

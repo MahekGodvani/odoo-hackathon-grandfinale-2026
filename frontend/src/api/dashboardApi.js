@@ -14,37 +14,37 @@ export const dashboardApi = {
         if (res.data?.success && res.data.data) {
           const d = res.data.data;
           const kpis = {
-            totalEmployees: d.total_employees ?? 5,
-            totalNetSalary: Number(d.ytd_payroll_payout ?? 10980),
-            payslipsGenerated: d.total_payroll_runs ?? 1,
-            approvedTimeOff: 2,
-            attendanceHealth: 96,
+            totalEmployees: d.kpis?.totalEmployees ?? d.total_employees ?? 6,
+            activeEmployees: d.kpis?.activeEmployees ?? d.active_employees ?? 6,
+            totalNetSalary: Number(d.kpis?.totalNetSalary ?? d.ytd_payroll_payout ?? 10980),
+            payslipsGenerated: d.kpis?.payslipsGenerated ?? d.total_payroll_runs ?? 2,
+            approvedTimeOff: d.kpis?.approvedTimeOff ?? 1,
+            attendanceHealth: d.kpis?.attendanceHealth ?? 100,
           };
-          const salaryByDepartment = Array.isArray(d.departments) 
-            ? d.departments.map((dept) => ({
-                department: dept.department || 'General',
-                cost: (dept.count || 1) * 5000
-              }))
-            : [
-                { department: 'Engineering', cost: 10000 },
-                { department: 'Marketing', cost: 4500 },
-                { department: 'Finance', cost: 6000 },
-                { department: 'Human Resources', cost: 5500 }
-              ];
-          const alerts = [
+          const salaryByDepartment = Array.isArray(d.salaryByDepartment) && d.salaryByDepartment.length > 0
+            ? d.salaryByDepartment
+            : (Array.isArray(d.departments)
+                ? d.departments.map(dept => ({ department: dept.department || 'General', cost: Number(dept.cost || 5000) }))
+                : [
+                    { department: 'Engineering', cost: 10000 },
+                    { department: 'Marketing', cost: 4500 },
+                    { department: 'Finance', cost: 6000 },
+                    { department: 'Human Resources', cost: 5500 }
+                  ]);
+          const alerts = Array.isArray(d.alerts) && d.alerts.length > 0 ? d.alerts : [
             { id: 'alt-payrun-1', type: 'warning', tag: 'Payrun Batch', text: 'September 2026 Payrun Batch ready for 2-step verification', link: '/payroll/payruns' },
             { id: 'alt-leave-1', type: 'info', tag: 'Time Off', text: '1 Leave request pending manager approval before cutoff', link: '/time-off/requests' },
-            { id: 'alt-ctr-1', type: 'warning', tag: 'Contracts', text: 'Periodic wage rate verification active for 6 staff contracts', link: '/contracts' }
+            { id: 'alt-ctr-1', type: 'warning', tag: 'Contracts', text: 'Periodic wage rate verification active for staff contracts', link: '/contracts' }
           ];
-          const attendanceSummary = {
+          const attendanceSummary = d.attendanceSummary || {
             present: 4,
             late: 0,
             absent: 0,
             overtime: 1,
             missingCheckout: 0
           };
-          const timeOffSummary = {
-            approved: 2,
+          const timeOffSummary = d.timeOffSummary || {
+            approved: 1,
             pending: 1,
             remainingLeave: 24
           };
@@ -58,6 +58,7 @@ export const dashboardApi = {
             }
           };
         }
+
       } catch (err) {
         console.warn('Live getDashboardStats fallback:', err?.message);
       }

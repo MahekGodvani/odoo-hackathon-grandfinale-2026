@@ -35,7 +35,9 @@ const normalizeEmployee = (emp) => {
     manager: emp.manager || 'Karan Mehta',
     scheduleName: emp.scheduleName || 'Standard Full-Time (40h)',
     status: (emp.status === 'active' || emp.status === 'Active') ? 'Active' : (emp.status || 'Active'),
+    type: emp.type || (emp.contract_type === 'part_time' ? 'Part-time' : emp.contract_type === 'contract' ? 'Contract' : 'Full-time'),
     joinDate: emp.joining_date ? String(emp.joining_date).slice(0, 10) : emp.joinDate || '2025-01-01',
+
     avatar: getAvatarUrl(fullName, emp.id),
     wage: emp.wage || emp.base_salary || 5000,
     baseSalary: emp.base_salary || emp.wage || 5000,
