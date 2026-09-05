@@ -20,11 +20,13 @@ const LoginPage = () => {
 
   // Sample registered accounts for quick demo filling
   const sampleAccounts = [
-    { name: 'Rahul Patel (HR Payroll Manager)', email: 'rahul.patel@peoplepay360.com', role: 'HR Payroll Manager' },
-    { name: 'Amit Shah (HR Manager)', email: 'amit.shah@peoplepay360.com', role: 'HR Manager' },
-    { name: 'Neha Patel (HR Payroll User)', email: 'neha.patel@peoplepay360.com', role: 'HR Payroll User' },
-    { name: 'Priya Shah (Employee)', email: 'priya.shah@peoplepay360.com', role: 'Employee' },
-    { name: 'Karan Mehta (System Admin)', email: 'karan.mehta@peoplepay360.com', role: 'Admin' },
+    { name: 'Jay Santoki (System Admin)', email: 'jaysantoki786@gmail.com', role: 'Admin', password: 'password123' },
+    { name: 'Rahul Patel (HR Payroll Manager)', email: 'rahul.patel@peoplepay360.com', role: 'HR Payroll Manager', password: 'password123' },
+    { name: 'Amit Shah (HR Manager)', email: 'amit.shah@peoplepay360.com', role: 'HR Manager', password: 'password123' },
+    { name: 'Neha Patel (HR Payroll User)', email: 'neha.patel@peoplepay360.com', role: 'HR Payroll User', password: 'password123' },
+    { name: 'Priya Shah (Employee)', email: 'priya.shah@peoplepay360.com', role: 'Employee', password: 'password123' },
+    { name: 'Karan Mehta (System Admin)', email: 'karan.mehta@peoplepay360.com', role: 'Admin', password: 'password123' },
+    { name: 'Default Admin (System Admin)', email: 'admin@peoplepay360.com', role: 'Admin', password: 'admin123' }
   ];
 
   const handleSubmit = async (e) => {
@@ -42,8 +44,9 @@ const LoginPage = () => {
   };
 
   const handleSelectAccount = (accEmail) => {
+    const selected = sampleAccounts.find((a) => a.email === accEmail);
     setEmail(accEmail);
-    setPassword('password123');
+    setPassword(selected?.password || 'password123');
     setErrorMsg('');
   };
 
