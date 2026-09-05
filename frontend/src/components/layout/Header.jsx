@@ -75,9 +75,13 @@ const Header = ({ onMobileMenuOpen }) => {
         {/* User Avatar & Logout */}
         <div className="flex items-center space-x-3 pl-3 border-l border-slate-200">
           <img
-            src={user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+            src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`}
             alt={user?.name}
-            className="w-8 h-8 rounded-full border border-slate-200 object-cover"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`;
+            }}
+            className="w-8 h-8 rounded-full border border-slate-200 object-cover shadow-xs"
           />
           <div className="hidden md:block text-left">
             <p className="text-xs font-semibold text-slate-800 leading-tight">{user?.name || 'User'}</p>

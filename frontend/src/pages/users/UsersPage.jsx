@@ -96,7 +96,15 @@ const UsersPage = () => {
       accessor: 'name',
       render: (r) => (
         <div className="flex items-center space-x-3">
-          <img src={r.avatar} alt={r.name} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+          <img 
+            src={r.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`} 
+            alt={r.name} 
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(r.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`;
+            }}
+            className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-xs" 
+          />
           <div>
             <p className="font-bold text-slate-800">{r.name}</p>
             <p className="text-xs text-slate-400">{r.email}</p>

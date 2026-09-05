@@ -6,23 +6,37 @@ import { mockDataStore } from '../services/mockDataStore';
  * Connects directly to backend /api/employees with fallback support.
  */
 
+const getAvatarUrl = (name, id) => {
+  const cleanName = encodeURIComponent((name || 'Employee').trim());
+  const colors = ['4f46e5', '2563eb', '059669', 'd97706', '7c3aed', 'db2777', '0d9488', '0891b2'];
+  const colorIndex = (typeof id === 'number' ? id : (name?.length || 0)) % colors.length;
+  const bg = colors[colorIndex];
+  return `https://ui-avatars.com/api/?name=${cleanName}&background=${bg}&color=fff&bold=true&rounded=true`;
+};
+
 const normalizeEmployee = (emp) => {
   if (!emp) return null;
+  const fullName = emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email || 'Employee';
+  const code = emp.employee_code || (emp.id ? `EMP-${1000 + Number(emp.id)}` : 'EMP-1001');
+
   return {
-    id: emp.id?.toString() || emp.employee_code || `EMP-${emp.id}`,
+    id: emp.id?.toString() || code,
     rawId: emp.id,
-    code: emp.employee_code || `EMP-${1000 + (emp.id || 1)}`,
-    name: emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email || 'Unnamed',
+    code,
+    employee_code: code,
+    name: fullName,
     firstName: emp.first_name || '',
     lastName: emp.last_name || '',
     email: emp.email || '',
     phone: emp.phone || '',
-    department: emp.department || 'General',
-    position: emp.designation || emp.position || 'Staff',
-    designation: emp.designation || emp.position || 'Staff',
+    department: emp.department || 'Engineering',
+    position: emp.designation || emp.position || 'Software Engineer',
+    designation: emp.designation || emp.position || 'Software Engineer',
+    manager: emp.manager || 'Karan Mehta',
+    scheduleName: emp.scheduleName || 'Standard Full-Time (40h)',
     status: (emp.status === 'active' || emp.status === 'Active') ? 'Active' : (emp.status || 'Active'),
     joinDate: emp.joining_date ? String(emp.joining_date).slice(0, 10) : emp.joinDate || '2025-01-01',
-    avatar: emp.avatar || `https://images.unsplash.com/photo-${1534528741775 + (Number(emp.id) || 1)}?w=150`,
+    avatar: getAvatarUrl(fullName, emp.id),
     wage: emp.wage || emp.base_salary || 5000,
     baseSalary: emp.base_salary || emp.wage || 5000,
     bankDetails: emp.bank_name ? {

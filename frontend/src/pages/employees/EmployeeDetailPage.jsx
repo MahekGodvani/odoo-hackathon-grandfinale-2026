@@ -114,8 +114,12 @@ const EmployeeDetailPage = () => {
           {/* Avatar & Employee Basic Info */}
           <div className="flex items-center space-x-4">
             <img
-              src={employee.avatar}
+              src={employee.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`}
               alt={employee.name}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`;
+              }}
               className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-100 shadow-xs"
             />
             <div>
@@ -125,9 +129,9 @@ const EmployeeDetailPage = () => {
               </div>
               <p className="text-sm font-semibold text-indigo-600 mt-0.5">{employee.position}</p>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
-                <span>ID: <strong className="font-mono text-slate-700">{employee.id}</strong></span>
+                <span>ID: <strong className="font-mono text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">{employee.code || employee.employee_code || (employee.rawId ? `EMP-${1000 + Number(employee.rawId)}` : employee.id)}</strong></span>
                 <span>Dept: <strong className="text-slate-700">{employee.department}</strong></span>
-                <span>Manager: <strong className="text-slate-700">{employee.manager}</strong></span>
+                <span>Manager: <strong className="text-slate-700">{employee.manager || 'Karan Mehta'}</strong></span>
               </div>
             </div>
           </div>

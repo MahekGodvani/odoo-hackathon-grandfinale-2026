@@ -73,19 +73,38 @@ const EmployeesPage = () => {
     {
       header: 'Employee',
       accessor: 'name',
-      render: (row) => (
-        <div className="flex items-center space-x-3">
-          <img src={row.avatar} alt={row.name} className="w-9 h-9 rounded-full object-cover border border-slate-200" />
-          <div>
-            <Link to={`/employees/${row.id}`} className="font-semibold text-slate-800 hover:text-indigo-600">
-              {row.name}
-            </Link>
-            <p className="text-xs text-slate-400">{row.email}</p>
+      render: (row) => {
+        const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`;
+        return (
+          <div className="flex items-center space-x-3">
+            <img 
+              src={row.avatar || fallbackAvatar} 
+              alt={row.name} 
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = fallbackAvatar;
+              }}
+              className="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-xs" 
+            />
+            <div>
+              <Link to={`/employees/${row.id}`} className="font-semibold text-slate-800 hover:text-indigo-600 block">
+                {row.name}
+              </Link>
+              <p className="text-xs text-slate-400">{row.email}</p>
+            </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
-    { header: 'Employee ID', accessor: 'id', render: (r) => <span className="font-mono text-xs text-slate-600">{r.id}</span> },
+    { 
+      header: 'Employee ID', 
+      accessor: 'code', 
+      render: (r) => (
+        <span className="font-mono text-xs font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100/80">
+          {r.code || r.employee_code || (r.rawId ? `EMP-${1000 + Number(r.rawId)}` : (r.id ? `EMP-${r.id}` : 'EMP-1001'))}
+        </span>
+      ) 
+    },
     { header: 'Department', accessor: 'department' },
     { header: 'Position', accessor: 'position' },
     { header: 'Manager', accessor: 'manager' },
@@ -224,12 +243,22 @@ const EmployeesPage = () => {
               <div>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <img src={emp.avatar} alt={emp.name} className="w-11 h-11 rounded-full object-cover border border-slate-200" />
+                    <img 
+                      src={emp.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`} 
+                      alt={emp.name} 
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name || 'User')}&background=4f46e5&color=fff&bold=true&rounded=true`;
+                      }}
+                      className="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-xs" 
+                    />
                     <div>
                       <Link to={`/employees/${emp.id}`} className="font-bold text-slate-800 hover:text-indigo-600 text-sm block">
                         {emp.name}
                       </Link>
-                      <span className="font-mono text-[11px] text-slate-400">{emp.id}</span>
+                      <span className="font-mono text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
+                        {emp.code || emp.employee_code || (emp.rawId ? `EMP-${1000 + Number(emp.rawId)}` : `EMP-${emp.id}`)}
+                      </span>
                     </div>
                   </div>
                   <StatusBadge status={emp.status} />
