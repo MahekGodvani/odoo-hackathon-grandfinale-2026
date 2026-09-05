@@ -72,7 +72,7 @@ const BusinessModelPage = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center space-x-2 mt-8 border-b border-slate-800/80 pt-2">
+        <div className="flex items-center space-x-2 mt-8 border-b border-slate-800/80 pt-2 overflow-x-auto pb-1">
           {[
             { id: 'pricing', label: 'Tiered Pricing & Add-ons', icon: DollarSign },
             { id: 'roi', label: 'Interactive ROI Calculator', icon: Calculator },
@@ -82,7 +82,7 @@ const BusinessModelPage = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-all ${
+              className={`flex items-center space-x-2 px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-all shrink-0 whitespace-nowrap cursor-pointer ${
                 activeTab === tab.id
                   ? 'bg-indigo-600 text-white border-t border-x border-indigo-500 shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'

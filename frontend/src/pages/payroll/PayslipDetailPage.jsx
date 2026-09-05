@@ -62,14 +62,14 @@ const PayslipDetailPage = () => {
   return (
     <div className="space-y-6">
       {/* Top action bar - Hidden during Print */}
-      <div className="no-print flex items-center justify-between">
+      <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center space-x-2 text-xs font-semibold text-slate-500 hover:text-indigo-600">
           <Link to="/payroll/payslips" className="flex items-center gap-1">
             <ArrowLeft className="w-4 h-4" /> Back to Payslips Repository
           </Link>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" icon={Printer} onClick={handlePrint}>
             Print Payslip
           </Button>
@@ -80,7 +80,7 @@ const PayslipDetailPage = () => {
       </div>
 
       {/* PRINTABLE PAYSLIP CONTAINER */}
-      <div className="payslip-container bg-white p-8 md:p-12 rounded-2xl border border-slate-200 shadow-sm max-w-4xl mx-auto space-y-8 text-slate-800">
+      <div className="payslip-container bg-white p-4 sm:p-8 md:p-12 rounded-2xl border border-slate-200 shadow-sm max-w-4xl mx-auto space-y-6 sm:space-y-8 text-slate-800 w-full overflow-hidden">
         
         {/* BRAND & HEADER SECTION */}
         <div className="flex items-start justify-between border-b-2 border-slate-900 pb-6">
