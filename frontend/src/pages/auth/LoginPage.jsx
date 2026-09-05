@@ -11,7 +11,7 @@ import Button from '../../components/common/Button';
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();  
-  const [email, setEmail] = useState('rahul.patel@peoplepay360.com');
+  const [email, setEmail] = useState('jaimil.trivedi@peoplepay360.com');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +19,7 @@ const LoginPage = () => {
 
   // Sample registered accounts for quick demo filling
   const sampleAccounts = [
+    { name: 'Jaimil Trivedi (System Admin)', email: 'jaimil.trivedi@peoplepay360.com', role: 'Admin', password: 'password123' },
     { name: 'Jay Santoki (System Admin)', email: 'jaysantoki786@gmail.com', role: 'Admin', password: 'password123' },
     { name: 'Rahul Patel (HR Payroll Manager)', email: 'rahul.patel@peoplepay360.com', role: 'HR Payroll Manager', password: 'password123' },
     { name: 'Amit Shah (HR Manager)', email: 'amit.shah@peoplepay360.com', role: 'HR Manager', password: 'password123' },

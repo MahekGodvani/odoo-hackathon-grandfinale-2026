@@ -297,14 +297,16 @@ INSERT INTO `users` (`id`, `company_id`, `email`, `password_hash`, `role`) VALUE
 (8, 1, 'amit.shah@peoplepay360.com', 'hash_password123', 'hr'),
 (9, 1, 'neha.patel@peoplepay360.com', 'hash_password123', 'payroll'),
 (10, 1, 'priya.shah@peoplepay360.com', 'hash_password123', 'employee'),
-(11, 1, 'karan.mehta@peoplepay360.com', 'hash_password123', 'admin');
+(11, 1, 'karan.mehta@peoplepay360.com', 'hash_password123', 'admin'),
+(12, 1, 'jaimil.trivedi@peoplepay360.com', 'hash_admin123', 'admin');
 
 INSERT INTO `employees` (`id`, `company_id`, `user_id`, `employee_code`, `first_name`, `last_name`, `email`, `phone`, `department`, `designation`, `joining_date`, `status`) VALUES
 (1, 1, 4, 'EMP-1001', 'Alex', 'Johnson', 'alex.johnson@peoplepay360.com', '+1234567890', 'Engineering', 'Senior Developer', '2025-01-15', 'active'),
 (2, 1, 5, 'EMP-1002', 'Sarah', 'Miller', 'sarah.miller@peoplepay360.com', '+1987654321', 'Marketing', 'Marketing Lead', '2025-03-01', 'active'),
 (3, 1, 7, 'EMP-1003', 'Rahul', 'Patel', 'rahul.patel@peoplepay360.com', '+1555019283', 'Finance', 'HR Payroll Manager', '2024-06-01', 'active'),
 (4, 1, 8, 'EMP-1004', 'Amit', 'Shah', 'amit.shah@peoplepay360.com', '+1555019284', 'Human Resources', 'HR Manager', '2024-05-15', 'active'),
-(5, 1, 10, 'EMP-1005', 'Priya', 'Shah', 'priya.shah@peoplepay360.com', '+1555019285', 'Engineering', 'Software Engineer', '2025-02-01', 'active');
+(5, 1, 10, 'EMP-1005', 'Priya', 'Shah', 'priya.shah@peoplepay360.com', '+1555019285', 'Engineering', 'Software Engineer', '2025-02-01', 'active'),
+(6, 1, 12, 'EMP-1006', 'Jaimil', 'Trivedi', 'jaimil.trivedi@peoplepay360.com', '+1555019299', 'Engineering', 'Lead System Administrator', '2024-01-01', 'active');
 
 INSERT INTO `bank_accounts` (`employee_id`, `bank_name`, `account_number`, `ifsc_code`, `account_type`, `is_primary`) VALUES
 (1, 'Chase Bank', '9876543210', 'CHASUS33', 'salary', 1),

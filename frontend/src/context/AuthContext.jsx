@@ -23,10 +23,10 @@ export const ROLES = {
 // Default initial user for instant hackathon presentation demo
 const DEFAULT_USER = {
   id: 'usr-1',
-  name: 'Rahul Patel',
-  email: 'rahul.patel@peoplepay360.com',
-  role: ROLES.HR_PAYROLL_MANAGER,
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+  name: 'Jaimil Trivedi',
+  email: 'jaimil.trivedi@peoplepay360.com',
+  role: ROLES.ADMIN,
+  avatar: 'https://ui-avatars.com/api/?name=Jaimil+Trivedi&background=4f46e5&color=fff&bold=true&rounded=true',
 };
 
 export const AuthProvider = ({ children }) => {
