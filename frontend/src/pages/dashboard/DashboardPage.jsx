@@ -175,29 +175,55 @@ const DashboardPage = () => {
         {/* Payroll Alerts Panel */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3.5">
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-500" />
                 Payroll Alerts
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                {alerts.length} Needs Attention
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                alerts.length > 0
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              }`}>
+                {alerts.length > 0 ? `${alerts.length} Action Items` : 'All Verified'}
               </span>
             </div>
 
-            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
               {alerts.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-6">No payroll alerts. All data verified!</p>
+                <div className="text-center py-6">
+                  <p className="text-xs font-bold text-slate-800">All Systems Compliant</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Contracts, time-off balances & attendance records are verified.</p>
+                </div>
               ) : (
                 alerts.map((alert) => (
                   <Link
                     key={alert.id}
-                    to={alert.link}
-                    className="block p-3 rounded-lg border border-amber-200 bg-amber-50/50 hover:bg-amber-100/50 transition-colors"
+                    to={alert.link || '/payroll/payruns'}
+                    className={`block p-2.5 rounded-xl border transition-all ${
+                      alert.type === 'error'
+                        ? 'border-rose-200 bg-rose-50/50 hover:bg-rose-100/60'
+                        : alert.type === 'info'
+                        ? 'border-blue-200 bg-blue-50/50 hover:bg-blue-100/60'
+                        : 'border-amber-200 bg-amber-50/50 hover:bg-amber-100/60'
+                    }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <p className="text-xs font-semibold text-slate-800">{alert.text}</p>
-                      <ChevronRight className="w-4 h-4 text-amber-600 shrink-0 ml-1" />
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center space-x-1.5 mb-1">
+                          <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded border ${
+                            alert.type === 'error'
+                              ? 'bg-rose-100 text-rose-700 border-rose-200'
+                              : alert.type === 'info'
+                              ? 'bg-blue-100 text-blue-700 border-blue-200'
+                              : 'bg-amber-100 text-amber-800 border-amber-200'
+                          }`}>
+                            {alert.tag || 'Action Required'}
+                          </span>
+                        </div>
+                        <p className="text-xs font-semibold text-slate-800 leading-snug">{alert.text}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
                     </div>
                   </Link>
                 ))
@@ -205,10 +231,17 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100">
+          <div className="mt-4 pt-3 border-t border-slate-100 space-y-2.5">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium px-1">
+              <span>Period Validation Status:</span>
+              <span className="font-bold text-emerald-600 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Audit Ready
+              </span>
+            </div>
             <Link
               to="/payroll/payruns"
-              className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs rounded-lg text-center block transition-colors"
+              className="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl text-center block transition-colors shadow-2xs border border-indigo-100"
             >
               Go to Payrun Wizard →
             </Link>

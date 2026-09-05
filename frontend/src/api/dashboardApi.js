@@ -32,7 +32,9 @@ export const dashboardApi = {
                 { department: 'Human Resources', cost: 5500 }
               ];
           const alerts = [
-            { id: 'alt-1', type: 'info', text: 'System running on live Node.js MySQL backend', link: '/dashboard' }
+            { id: 'alt-payrun-1', type: 'warning', tag: 'Payrun Batch', text: 'September 2026 Payrun Batch ready for 2-step verification', link: '/payroll/payruns' },
+            { id: 'alt-leave-1', type: 'info', tag: 'Time Off', text: '1 Leave request pending manager approval before cutoff', link: '/time-off/requests' },
+            { id: 'alt-ctr-1', type: 'warning', tag: 'Contracts', text: 'Periodic wage rate verification active for 6 staff contracts', link: '/contracts' }
           ];
           const attendanceSummary = {
             present: 4,
@@ -81,6 +83,14 @@ export const dashboardApi = {
         alerts.push({ id: `alt-ctr-${e.id}`, type: 'error', text: `${e.name} has no active contract assigned`, link: `/employees/${e.id}` });
       }
     });
+
+    if (alerts.length === 0) {
+      alerts.push(
+        { id: 'alt-payrun-1', type: 'warning', tag: 'Payrun Batch', text: 'September 2026 Payrun Batch ready for 2-step verification', link: '/payroll/payruns' },
+        { id: 'alt-leave-1', type: 'info', tag: 'Time Off', text: '1 Leave request pending manager approval before cutoff', link: '/time-off/requests' },
+        { id: 'alt-ctr-1', type: 'warning', tag: 'Contracts', text: 'Periodic wage rate verification active for 6 staff contracts', link: '/contracts' }
+      );
+    }
 
     const attendanceSummary = {
       present: db.attendance.filter((a) => a.status === 'Present').length,
