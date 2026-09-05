@@ -46,10 +46,12 @@ const LandingPage = () => {
     }
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white font-sans antialiased overflow-x-hidden">
-      {/* Top Glassmorphic Navigation */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/80">
+    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white font-sans antialiased">
+      {/* Fixed Top Navigation Bar (Always Visible on Scroll) */}
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-950/95 border-b border-slate-800 shadow-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-base shadow-lg shadow-indigo-500/25">
@@ -59,13 +61,14 @@ const LandingPage = () => {
               <div className="flex items-center space-x-2">
                 <span className="font-extrabold text-white text-lg tracking-tight">PeoplePay360</span>
                 <span className="bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">
-                  ENTERPRISE
+                  PRO
                 </span>
               </div>
-              <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">HR & Payroll Platform</p>
+              <p className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">HR & Payroll Suite</p>
             </div>
           </div>
 
+          {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center space-x-8 text-xs font-semibold text-slate-300">
             <a href="#features" className="hover:text-indigo-400 transition-colors">Core Features</a>
             <a href="#workflow" className="hover:text-indigo-400 transition-colors">2-Step Payrun Flow</a>
@@ -80,7 +83,8 @@ const LandingPage = () => {
             </a>
           </nav>
 
-          <div className="flex items-center space-x-3">
+          {/* Right Action Buttons */}
+          <div className="hidden sm:flex items-center space-x-3">
             <Link
               to="/login"
               className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800 transition-all"
@@ -95,11 +99,67 @@ const LandingPage = () => {
               <span>Launch Live App</span>
             </button>
           </div>
+
+          {/* Mobile Menu Hamburger Toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 md:hidden border border-slate-800 cursor-pointer"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
+
+        {/* Mobile Dropdown Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-slate-950 border-b border-slate-800 px-4 pt-2 pb-6 space-y-3 animate-in slide-in-from-top-2 duration-150">
+            <a
+              href="#features"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:bg-slate-900"
+            >
+              Core Features
+            </a>
+            <a
+              href="#workflow"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:bg-slate-900"
+            >
+              2-Step Payrun Flow
+            </a>
+            <a
+              href="#pricing"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:bg-slate-900"
+            >
+              Pricing & ROI
+            </a>
+            <Link
+              to="/business-model"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-sm font-semibold text-amber-400 hover:bg-slate-900"
+            >
+              Business Model & Strategy
+            </Link>
+            <div className="pt-3 border-t border-slate-800 flex items-center space-x-2">
+              <Link
+                to="/login"
+                className="flex-1 py-2 rounded-xl text-xs font-bold text-center text-slate-300 bg-slate-900 border border-slate-800"
+              >
+                Sign In
+              </Link>
+              <button
+                onClick={() => handleQuickLaunchRole(ROLES.ADMIN)}
+                className="flex-1 py-2 rounded-xl text-xs font-bold text-center bg-indigo-600 text-white shadow-md"
+              >
+                Launch App
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* HERO SECTION */}
-      <section className="relative pt-20 pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+      {/* HERO SECTION WITH TOP PADDING FOR FIXED NAVBAR */}
+      <section className="relative pt-32 pb-28 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
         {/* Ambient Glows */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-indigo-600/20 blur-[130px] rounded-full pointer-events-none" />
         <div className="absolute top-1/3 left-1/3 w-[300px] h-[250px] bg-purple-600/15 blur-[100px] rounded-full pointer-events-none" />
