@@ -42,13 +42,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Non-selected modules & database
-app/(dashboard)/
-app/page.tsx
-app/layout.tsx
-app/globals.css
-app/favicon.ico
+# Database & local files
 prisma/
 *.db
 *.db-journal
+scratch/
 CLAUDE.md
