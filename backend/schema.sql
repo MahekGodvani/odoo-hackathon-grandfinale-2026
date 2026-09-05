@@ -291,7 +291,8 @@ INSERT INTO `users` (`id`, `company_id`, `email`, `password_hash`, `role`) VALUE
 (2, 1, 'hr@peoplepay360.com', 'hash_hr123', 'hr'),
 (3, 1, 'payroll@peoplepay360.com', 'hash_payroll123', 'payroll'),
 (4, 1, 'alex.johnson@peoplepay360.com', 'hash_emp123', 'employee'),
-(5, 1, 'sarah.miller@peoplepay360.com', 'hash_emp123', 'employee');
+(5, 1, 'sarah.miller@peoplepay360.com', 'hash_emp123', 'employee'),
+(6, 1, 'jaysantoki786@gmail.com', 'hash_admin123', 'admin');
 
 INSERT INTO `employees` (`id`, `company_id`, `user_id`, `employee_code`, `first_name`, `last_name`, `email`, `phone`, `department`, `designation`, `joining_date`, `status`) VALUES
 (1, 1, 4, 'EMP-1001', 'Alex', 'Johnson', 'alex.johnson@peoplepay360.com', '+1234567890', 'Engineering', 'Senior Developer', '2025-01-15', 'active'),

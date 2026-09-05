@@ -1,101 +1,126 @@
-# 🚀 PeoplePay360 - Integrated HR & Payroll Operational Suite
+# 🚀 PeoplePay360 - Complete HR & Payroll Management Platform
 
-> **Enterprise-Grade HR & Payroll Operational Platform built for 24-Hour Hackathon.**
+> **Full-Stack Enterprise-Grade HR & Payroll Operational Suite (React + Node.js/Express + MySQL + Swagger)**
 
-PeoplePay360 seamlessly connects **Employee → Contract → Working Schedule → Attendance → Time Off → Salary Structure & Rules → Payrun Execution → Itemized Printable Payslips**.
-
----
-
-## ✨ Features & Highlights
-
-- **Hero Employee Operational Hub**: Single-page 360-degree operational hub connecting an employee's personal info, work info, active contract, working schedule, attendance history, leave balances, and payslips.
-- **2-Step Payrun Creation Wizard**:
-  - **Step 1**: Structure & period setup.
-  - **Step 2**: Multi-select eligible employees.
-- **Payrun Processing Hub & Audit Warnings**:
-  - Sequential workflow execution (`Draft` → `Compute` → `Validate` → `Mark Paid` → `Send Payslips`).
-  - Prominent visual warning alerts for missing bank details, duplicate payslips, and contract expirations.
-- **Live Rule Engine & Formula Preview**: Salary structures with ordered execution flow (`BASIC`, `HRA 20%`, `TA`, `PF 12%`) and real-time formula calculation previews.
-- **Printable Itemized Payslip**: Print-optimized layout (`@media print`) for instant browser PDF export.
-- **Time Off & Attendance Engine**:
-  - Working schedule net weekly hours calculator (`40h`).
-  - Attendance log with overtime and late triggers.
-  - Leave approval modal with **Balance Impact Preview Box** (`Balance Before → Deducted → Balance Remaining`).
-- **Role-Based Access Control (RBAC)**: Support for 5 enterprise roles (*Employee*, *HR Manager*, *HR Payroll User*, *HR Payroll Manager*, *Admin*) with top header role switcher for presentation testing.
-- **Backend-Ready Service Layer**: Axios client configured to seamlessly toggle between LocalStorage mock database and Node.js / Express REST API endpoints via `VITE_USE_MOCK`.
+PeoplePay360 seamlessly connects **Company → Employees → Contracts → Attendance → Leaves → Payroll Execution → Payslip Generation → Bank Payments & Reports**.
 
 ---
 
-## 🛠️ Tech Stack
+## 🏗️ Architecture & Monorepo Structure
 
-- **Frontend Framework**: React 18
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS (v4)
-- **Icons**: Lucide React
-- **Data Visualization**: Recharts
-- **HTTP Client**: Axios (Centralized API service architecture)
-- **Routing**: React Router DOM (v6)
-
----
-
-## 🚀 Quick Start Guide
-
-### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
-
-### Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/peoplepay360.git
-   cd peoplepay360
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Start the local development server**:
-   ```bash
-   npm run dev
-   ```
-   Open `http://localhost:3000` in your web browser.
-
-4. **Build for Production**:
-   ```bash
-   npm run build
-   ```
+```
+.
+├── backend/                       # Node.js + Express + MySQL REST API
+│   ├── src/
+│   │   ├── config/                # Database pool (db.js), DB Initializer (initDb.js), Swagger (swagger.js)
+│   │   ├── controllers/           # 15 Controller modules (Auth, Employee, Attendance, Payroll, Payslip, etc.)
+│   │   ├── middlewares/           # JWT Authentication & RBAC Authorization
+│   │   ├── routes/                # 15 Express Router definitions
+│   │   ├── app.js                 # Express Application & Middleware pipeline
+│   │   └── server.js              # Server bootstrapper (Port 5000)
+│   ├── package.json               # Backend dependencies & scripts
+│   └── .env.example               # Backend environment variables template
+│
+├── frontend/                      # React 19 + Vite + Tailwind CSS + Lucide + Recharts
+│   ├── src/
+│   │   ├── api/                   # Centralized Axios API services with token interception
+│   │   ├── components/            # Reusable UI components, Layouts, Protected Routes
+│   │   ├── context/               # AuthContext & RBAC management
+│   │   ├── pages/                 # Full suite of HR & Payroll pages (Dashboard, Employees, Payroll, etc.)
+│   │   ├── services/              # Mock store fallback
+│   │   ├── App.jsx                # Router & Page routes
+│   │   └── main.jsx               # Entry point
+│   ├── index.html                 # HTML template
+│   ├── vite.config.js             # Vite configuration (Port 3000)
+│   ├── package.json               # Frontend dependencies & scripts
+│   └── .env.example               # Frontend environment variables template
+│
+├── package.json                   # Unified Root Scripts (concurrent dev, build, db init)
+└── README.md                      # Complete Project Documentation
+```
 
 ---
 
-## 🔑 Demo Account Credentials
+## ⚡ Quick Start
 
-Use any of the registered accounts below to log in:
+### 1. Prerequisites
+- **Node.js** (v18 or higher)
+- **MySQL Server** (running locally or remotely)
+
+### 2. Configure Environment Variables
+
+**Backend (`backend/.env`):**
+```env
+PORT=5000
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=demo
+JWT_SECRET=your_super_secret_jwt_key
+JWT_EXPIRES_IN=1d
+REFRESH_TOKEN_EXPIRES_IN=7d
+```
+
+**Frontend (`frontend/.env`):**
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_USE_MOCK=false
+```
+
+### 3. Initialize the Database
+Populates the schema, default companies, roles, admin credentials, sample employees, and mock datasets:
+```bash
+npm run init:db
+```
+
+### 4. Run Both Frontend & Backend Concurrently
+From the root directory:
+```bash
+# Install all dependencies across root, backend, and frontend
+npm run install:all
+
+# Run backend (Port 5000) + frontend (Port 3000) simultaneously
+npm run dev
+```
+
+Alternatively, run them in separate terminals:
+- **Backend**: `npm run dev:backend` (accessible at `http://localhost:5000`)
+- **Frontend**: `npm run dev:frontend` (accessible at `http://localhost:3000`)
+
+---
+
+## 📖 Interactive Swagger API Documentation
+
+Once the backend is running, open the interactive Swagger UI in your browser:
+👉 **[http://localhost:5000/api-docs](http://localhost:5000/api-docs)**
+
+Explore and test all 15 operational REST API modules directly with built-in JWT bearer authorization!
+
+---
+
+## 🔑 Default Credentials
 
 | Role | Email | Password |
 |---|---|---|
+| **System Admin** | `admin@demo.com` | `admin123` |
 | **HR Payroll Manager** | `rahul.patel@peoplepay360.com` | `password123` |
 | **HR Manager** | `amit.shah@peoplepay360.com` | `password123` |
-| **HR Payroll User** | `neha.patel@peoplepay360.com` | `password123` |
 | **Employee** | `priya.shah@peoplepay360.com` | `password123` |
-| **System Admin** | `karan.mehta@peoplepay360.com` | `password123` |
 
 ---
 
-## 📁 Repository Structure
+## 🛠️ Key Scripts
 
-```
-src/
-  api/          # Centralized service layer (employeeApi, payrollApi, etc.)
-  components/   # Common design system components, layout, & auth guards
-  context/      # AuthContext with RBAC role switching
-  pages/        # Feature modules (Dashboard, Employees, Contracts, Schedules, Attendance, TimeOff, Payroll, Reports, Users)
-  services/     # Mock data store with LocalStorage persistence
-```
+| Command | Description |
+|---|---|
+| `npm run dev` | Runs backend (5000) and frontend (3000) concurrently |
+| `npm run dev:backend` | Starts the Node.js backend with file watching |
+| `npm run dev:frontend` | Starts the Vite React frontend server |
+| `npm run init:db` | Automatically creates MySQL tables and seeds initial data |
+| `npm run build` | Builds the frontend for production distribution |
 
 ---
 
 ## 📄 License
-This project is open-source under the MIT License.
+MIT License
