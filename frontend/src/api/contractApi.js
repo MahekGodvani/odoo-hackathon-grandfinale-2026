@@ -29,17 +29,25 @@ export const contractApi = {
   getContracts: async () => {
     if (!USE_MOCK_DATA) {
       try {
-        const res = await apiClient.get('/salaries');
-        if (res.data?.salaries && Array.isArray(res.data.salaries)) {
-          return { data: res.data.salaries.map(normalizeContract) };
+        const res = await apiClient.get('/contracts');
+        if (res.data?.contracts && Array.isArray(res.data.contracts)) {
+          return { data: res.data.contracts.map(normalizeContract) };
         }
       } catch (err) {
-        console.warn('Live getContracts failed, using fallback:', err?.message);
+        try {
+          const res = await apiClient.get('/salaries');
+          if (res.data?.salaries && Array.isArray(res.data.salaries)) {
+            return { data: res.data.salaries.map(normalizeContract) };
+          }
+        } catch {
+          console.warn('Live getContracts failed, using fallback:', err?.message);
+        }
       }
     }
     const db = mockDataStore.get();
     return { data: db.contracts };
   },
+
 
   getContractByEmployee: async (employeeId) => {
     if (!USE_MOCK_DATA) {
@@ -105,14 +113,20 @@ export const contractApi = {
           hra_allowance: contractData.hraAllowance,
           transport_allowance: contractData.transportAllowance,
           other_allowance: contractData.otherAllowance,
-          tax_deduction_rate: contractData.taxDeductionRate
+          tax_deduction_rate: contractData.taxDeductionRate,
+          status: contractData.status?.toLowerCase()
         };
-        await apiClient.put(`/salaries/${id}`, payload);
+        try {
+          await apiClient.put(`/contracts/${id}`, payload);
+        } catch {
+          await apiClient.put(`/salaries/${id}`, payload);
+        }
         return { data: { ...contractData, id } };
       } catch (err) {
         console.warn('Live updateContract failed, using fallback:', err?.message);
       }
     }
+
     const db = mockDataStore.get();
     const idx = db.contracts.findIndex((c) => String(c.id) === String(id));
     if (idx !== -1) {

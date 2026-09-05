@@ -27,6 +27,8 @@ const PayrunsPage = () => {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [selectedEmpIds, setSelectedEmpIds] = useState([]);
+  const [eligibilityData, setEligibilityData] = useState(null);
+  const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
 
   const [toastMessage, setToastMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,11 +68,42 @@ const PayrunsPage = () => {
     setIsWizardOpen(true);
   };
 
+  const handleGoToStep2 = async () => {
+    setIsCheckingEligibility(true);
+    setWizardStep(2);
+    try {
+      const pMonth = wizardData.startDate ? new Date(wizardData.startDate).getMonth() + 1 : 8;
+      const pYear = wizardData.startDate ? new Date(wizardData.startDate).getFullYear() : 2026;
+      const res = await payrollApi.checkEligibility(pMonth, pYear);
+      if (res.data) {
+        setEligibilityData(res.data);
+        // Default to selecting all eligible employees
+        const eligibleEmpIds = (res.data.employees || [])
+          .filter((e) => e.is_eligible !== false)
+          .map((e) => e.id);
+        if (eligibleEmpIds.length > 0) {
+          setSelectedEmpIds(eligibleEmpIds);
+        }
+      }
+    } catch (err) {
+      console.warn('Pre-validation check error:', err);
+    } finally {
+      setIsCheckingEligibility(false);
+    }
+  };
+
   const handleSelectAllEmps = (e) => {
     if (e.target.checked) {
       setSelectedEmpIds(employees.map((emp) => emp.id));
     } else {
       setSelectedEmpIds([]);
+    }
+  };
+
+  const handleSelectEligibleOnly = () => {
+    if (eligibilityData?.employees) {
+      const eligible = eligibilityData.employees.filter((e) => e.is_eligible !== false).map((e) => e.id);
+      setSelectedEmpIds(eligible);
     }
   };
 
@@ -214,54 +247,112 @@ const PayrunsPage = () => {
               <Button variant="secondary" onClick={() => setIsWizardOpen(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={() => setWizardStep(2)}>
-                Continue to Employee Selection →
+              <Button variant="primary" onClick={handleGoToStep2} isLoading={isCheckingEligibility}>
+                Continue to Employee Pre-Audit →
               </Button>
             </div>
           </div>
         ) : (
-          /* STEP 2: SELECT ELIGIBLE EMPLOYEES */
+          /* STEP 2: SELECT ELIGIBLE EMPLOYEES & PRE-VALIDATION */
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-xs text-indigo-900 font-semibold">
-              <span>Step 2: Select eligible employees included in this payrun.</span>
-              <span className="font-bold">{selectedEmpIds.length} Selected</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-indigo-50/90 rounded-xl border border-indigo-100 gap-2 text-xs text-indigo-900">
+              <div>
+                <span className="font-bold block sm:inline">Pre-Payroll Eligibility Audit: </span>
+                <span>
+                  {eligibilityData?.eligible_count ?? selectedEmpIds.length} of {employees.length} employees direct-deposit ready
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSelectEligibleOnly}
+                  className="px-2.5 py-1 text-xs font-semibold bg-white text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                >
+                  Select Eligible Only
+                </button>
+                <span className="font-bold bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[11px]">
+                  {selectedEmpIds.length} Selected
+                </span>
+              </div>
             </div>
 
-            <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-xl">
+            <div className="max-h-80 overflow-y-auto border border-slate-200 rounded-xl">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 uppercase font-bold text-slate-500 sticky top-0">
                   <tr>
-                    <th className="p-3">
+                    <th className="p-3 w-10">
                       <input
                         type="checkbox"
-                        checked={selectedEmpIds.length === employees.length}
+                        checked={selectedEmpIds.length === employees.length && employees.length > 0}
                         onChange={handleSelectAllEmps}
                         className="rounded text-indigo-600 focus:ring-indigo-500"
                       />
                     </th>
                     <th className="p-3">Employee</th>
                     <th className="p-3">Department</th>
-                    <th className="p-3">Position</th>
-                    <th className="p-3">Status</th>
+                    <th className="p-3">Contract Validity</th>
+                    <th className="p-3">Direct Deposit Bank</th>
+                    <th className="p-3">Compliance</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {employees.map((emp) => (
-                    <tr key={emp.id} className="hover:bg-slate-50">
-                      <td className="p-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedEmpIds.includes(emp.id)}
-                          onChange={() => handleToggleEmp(emp.id)}
-                          className="rounded text-indigo-600 focus:ring-indigo-500"
-                        />
-                      </td>
-                      <td className="p-3 font-bold text-slate-800">{emp.name} ({emp.id})</td>
-                      <td className="p-3 text-slate-600">{emp.department}</td>
-                      <td className="p-3 text-slate-600">{emp.position}</td>
-                      <td className="p-3"><StatusBadge status={emp.status} /></td>
-                    </tr>
-                  ))}
+                  {employees.map((emp) => {
+                    const audit = eligibilityData?.employees?.find((e) => String(e.id) === String(emp.id));
+                    const hasContract = audit ? audit.has_contract : true;
+                    const hasBank = audit ? audit.has_bank : !!(emp.bankAccountNo || emp.bank_account_no);
+                    const pendingLeaves = audit?.pending_leaves || 0;
+
+                    return (
+                      <tr key={emp.id} className="hover:bg-slate-50">
+                        <td className="p-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedEmpIds.includes(emp.id)}
+                            onChange={() => handleToggleEmp(emp.id)}
+                            className="rounded text-indigo-600 focus:ring-indigo-500"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <p className="font-bold text-slate-800">{emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`}</p>
+                          <span className="font-mono text-[10px] text-slate-400">{emp.employee_code || emp.code || emp.id}</span>
+                        </td>
+                        <td className="p-3 text-slate-600">{emp.department}</td>
+                        <td className="p-3">
+                          {hasContract ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Active Contract
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                              No Contract
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {hasBank ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Bank Verified
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                              Missing IFSC
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {pendingLeaves > 0 ? (
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                              {pendingLeaves} Pending Leave
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-slate-500">
+                              Clean
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -271,12 +362,13 @@ const PayrunsPage = () => {
                 ← Back to Step 1
               </Button>
               <Button variant="primary" onClick={handleCreatePayrun} isLoading={isSubmitting}>
-                Create Payrun Draft
+                Create Payrun Draft ({selectedEmpIds.length})
               </Button>
             </div>
           </div>
         )}
       </Modal>
+
 
       <Toast message={toastMessage} onClose={() => setToastMessage('')} />
     </div>

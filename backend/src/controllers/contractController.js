@@ -1,5 +1,58 @@
 import db from '../config/db.js';
 
+// GET /api/contracts
+const getAllContracts = async (req, res) => {
+  try {
+    const { status, employee_id } = req.query;
+    let query = `
+      SELECT c.*, 
+             e.first_name, e.last_name, e.employee_code, e.department, e.designation,
+             b.bank_name, b.account_number AS bank_account_no, b.ifsc_code AS bank_ifsc_code
+      FROM contracts c
+      JOIN employees e ON e.id = c.employee_id
+      LEFT JOIN bank_accounts b ON b.employee_id = e.id AND b.is_primary = 1
+      WHERE 1=1
+    `;
+    const params = [];
+    if (status) {
+      query += ` AND c.status = ?`;
+      params.push(status);
+    }
+    if (employee_id) {
+      query += ` AND c.employee_id = ?`;
+      params.push(employee_id);
+    }
+    query += ` ORDER BY c.id DESC`;
+
+    const [rows] = await db.query(query, params);
+    return res.json({ success: true, count: rows.length, contracts: rows });
+  } catch (error) {
+    console.error('getAllContracts error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/contracts/:id
+const getContractById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.query(
+      `SELECT c.*, e.first_name, e.last_name, e.employee_code, e.department, e.designation
+       FROM contracts c
+       JOIN employees e ON e.id = c.employee_id
+       WHERE c.id = ?`,
+      [id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Contract not found.' });
+    }
+    return res.json({ success: true, contract: rows[0] });
+  } catch (error) {
+    console.error('getContractById error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Get active contract for an employee
 const getContractByEmployee = async (req, res) => {
   try {
@@ -24,7 +77,7 @@ const getContractByEmployee = async (req, res) => {
   }
 };
 
-// Step 2: Assign / Create or Update contract
+// Step 2: Assign / Create contract
 const assignContract = async (req, res) => {
   const conn = await db.getConnection();
   try {
@@ -76,12 +129,72 @@ const assignContract = async (req, res) => {
   }
 };
 
+// PUT /api/contracts/:id
+const updateContract = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      contract_type,
+      base_salary,
+      hra_allowance,
+      transport_allowance,
+      other_allowance,
+      tax_deduction_rate,
+      start_date,
+      end_date,
+      status
+    } = req.body;
+
+    const [result] = await db.query(
+      `UPDATE contracts
+       SET contract_type = COALESCE(?, contract_type),
+           base_salary = COALESCE(?, base_salary),
+           hra_allowance = COALESCE(?, hra_allowance),
+           transport_allowance = COALESCE(?, transport_allowance),
+           other_allowance = COALESCE(?, other_allowance),
+           tax_deduction_rate = COALESCE(?, tax_deduction_rate),
+           start_date = COALESCE(?, start_date),
+           end_date = COALESCE(?, end_date),
+           status = COALESCE(?, status)
+       WHERE id = ?`,
+      [
+        contract_type,
+        base_salary,
+        hra_allowance,
+        transport_allowance,
+        other_allowance,
+        tax_deduction_rate,
+        start_date,
+        end_date,
+        status,
+        id
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Contract not found.' });
+    }
+
+    return res.json({ success: true, message: 'Contract updated successfully.' });
+  } catch (error) {
+    console.error('updateContract error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export {
+  getAllContracts,
+  getContractById,
   getContractByEmployee,
-  assignContract
+  assignContract,
+  updateContract
 };
 
 export default {
+  getAllContracts,
+  getContractById,
   getContractByEmployee,
-  assignContract
+  assignContract,
+  updateContract
 };
+

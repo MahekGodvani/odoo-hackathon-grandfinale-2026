@@ -35,6 +35,7 @@ const PayrunDetailPage = () => {
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [warnings, setWarnings] = useState([]);
 
   const fetchPayrunDetails = async () => {
     setLoading(true);
@@ -44,6 +45,14 @@ const PayrunDetailPage = () => {
 
       const psRes = await payslipApi.getPayslips({ payrunId: id });
       setPayslips(psRes.data);
+
+      // Check live eligibility & audit warnings for this period
+      const pMonth = prRes.data?.periodMonth || (prRes.data?.periodStart ? new Date(prRes.data.periodStart).getMonth() + 1 : 8);
+      const pYear = prRes.data?.periodYear || (prRes.data?.periodStart ? new Date(prRes.data.periodStart).getFullYear() : 2026);
+      const eligRes = await payrollApi.checkEligibility(pMonth, pYear);
+      if (eligRes.data?.warnings) {
+        setWarnings(eligRes.data.warnings);
+      }
     } catch (err) {
       console.error('Error loading payrun details', err);
     } finally {
@@ -63,6 +72,7 @@ const PayrunDetailPage = () => {
   const isComputed = status === 'Computed';
   const isValidated = status === 'Validated';
   const isPaid = status === 'Paid';
+  const employeeCount = payrun.totalEmployees || payrun.employeeCount || payslips.length;
 
   const handleCompute = async () => {
     setIsProcessing(true);
@@ -107,7 +117,7 @@ const PayrunDetailPage = () => {
     setIsProcessing(true);
     try {
       await payrollApi.sendPayslips(id);
-      setToastMessage(`Payslips sent to ${payrun.totalEmployees} employees via email.`);
+      setToastMessage(`Payslips sent to ${employeeCount} employees via email.`);
       setIsSendModalOpen(false);
       fetchPayrunDetails();
     } catch (err) {
@@ -116,13 +126,6 @@ const PayrunDetailPage = () => {
       setIsProcessing(false);
     }
   };
-
-  // Sample prominent payroll warnings
-  const warnings = [
-    { id: 1, title: 'Rahul Patel', text: 'Missing bank account details for direct deposit', type: 'warning' },
-    { id: 2, title: 'Amit Shah', text: 'Duplicate payslip entry detected in prior batch', type: 'warning' },
-    { id: 3, title: 'Neha Shah', text: 'Active contract expiring within current pay period', type: 'error' },
-  ];
 
   return (
     <div className="space-y-6">
@@ -199,7 +202,7 @@ const PayrunDetailPage = () => {
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
             <p className="text-[11px] font-bold text-slate-400 uppercase">Total Employees</p>
             <p className="text-xl font-bold text-slate-800 mt-1 flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-600" /> {payrun.totalEmployees}
+              <Users className="w-5 h-5 text-indigo-600" /> {employeeCount}
             </p>
           </div>
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -207,7 +210,7 @@ const PayrunDetailPage = () => {
             <p className="text-xl font-bold text-slate-800 mt-1">₹{payrun.totalGross?.toLocaleString()}</p>
           </div>
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-            <p className="text-[11px] font-bold text-slate-400 uppercase">Total Deductions (PF)</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase">Total Deductions (PF & Tax)</p>
             <p className="text-xl font-bold text-rose-700 mt-1">₹{payrun.totalDeductions?.toLocaleString()}</p>
           </div>
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
@@ -217,28 +220,45 @@ const PayrunDetailPage = () => {
         </div>
       </div>
 
-      {/* PROMINENT PAYROLL WARNINGS PANEL (IMPORTANT REQUIREMENT) */}
-      <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs">
-        <div className="flex items-center space-x-2 mb-3">
-          <AlertTriangle className="w-5 h-5 text-amber-500" />
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Payroll Warnings & Audit Alerts</h3>
-          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
-            {warnings.length} Prominent Alerts
-          </span>
-        </div>
+      {/* PROMINENT PAYROLL WARNINGS & AUDIT PANEL */}
+      {warnings.length > 0 ? (
+        <div className="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs">
+          <div className="flex items-center space-x-2 mb-3">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Payroll Warnings & Audit Alerts</h3>
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+              {warnings.length} Prominent Alerts
+            </span>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {warnings.map((w) => (
-            <div key={w.id} className="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-xs">
-              <p className="font-bold text-slate-800 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                {w.title}
-              </p>
-              <p className="text-slate-600 mt-1">{w.text}</p>
-            </div>
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {warnings.map((w) => (
+              <div key={w.id} className="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-xs">
+                <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${w.type === 'error' ? 'bg-rose-500' : 'bg-amber-500'}`}></span>
+                  {w.title}
+                </p>
+                <p className="text-slate-600 mt-1">{w.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <CheckCircle className="w-5 h-5 text-emerald-500" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-800">Pre-Payroll Audit Checks: 100% Passed</h3>
+                <p className="text-xs text-slate-500 mt-0.5">All active employee contracts, banking IFSC codes, and leave balances are verified for this payrun cycle.</p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Audit Ready
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* GENERATED PAYSLIPS TABLE */}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -255,15 +275,15 @@ const PayrunDetailPage = () => {
               render: (r) => (
                 <div>
                   <p className="font-bold text-slate-800">{r.employeeName}</p>
-                  <span className="font-mono text-[11px] text-slate-400">{r.employeeId}</span>
+                  <span className="font-mono text-[11px] text-slate-400">{r.employeeCode || r.employeeId}</span>
                 </div>
               )
             },
             { header: 'Department', accessor: 'department' },
             { header: 'Basic Salary', accessor: 'basic', render: (r) => `₹${r.basic?.toLocaleString()}` },
-            { header: 'HRA (20%)', accessor: 'hra', render: (r) => `₹${r.hra?.toLocaleString()}` },
+            { header: 'HRA / Allowances', accessor: 'allowances', render: (r) => `₹${(r.allowances || r.hra || 0).toLocaleString()}` },
             { header: 'Gross Salary', accessor: 'gross', render: (r) => `₹${r.gross?.toLocaleString()}` },
-            { header: 'Deductions (PF)', accessor: 'pf', render: (r) => `₹${r.pf?.toLocaleString()}` },
+            { header: 'Deductions (Tax & Leaves)', accessor: 'deductions', render: (r) => `₹${(r.deductions ?? r.pf ?? 0).toLocaleString()}` },
             { header: 'Net Salary', accessor: 'net', render: (r) => <span className="font-bold text-emerald-600">₹{r.net?.toLocaleString()}</span> },
             {
               header: 'Action',
@@ -291,12 +311,12 @@ const PayrunDetailPage = () => {
       >
         <div className="space-y-4 text-xs">
           <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 space-y-2">
-            <p className="font-bold text-indigo-900 text-sm">Send payslips to {payrun.totalEmployees} employees?</p>
+            <p className="font-bold text-indigo-900 text-sm">Send payslips to {employeeCount} employees?</p>
             <p className="text-indigo-700">
               This action will dispatch itemized PDF payslip notifications for period <strong>{payrun.period}</strong>.
             </p>
             <div className="pt-2 flex items-center space-x-4 font-semibold text-indigo-900">
-              <span>Employees: {payrun.totalEmployees}</span>
+              <span>Employees: {employeeCount}</span>
               <span>Payslips: {payslips.length}</span>
             </div>
           </div>

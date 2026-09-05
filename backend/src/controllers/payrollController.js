@@ -73,13 +73,160 @@ const getEmployeePayroll = async (req, res) => {
   }
 };
 
+// GET /api/payroll/eligibility
+const getPayrollEligibility = async (req, res) => {
+  try {
+    const month = parseInt(req.query.period_month, 10) || new Date().getMonth() + 1;
+    const year = parseInt(req.query.period_year, 10) || new Date().getFullYear();
+
+    const workingDaysInMonth = new Date(year, month, 0).getDate();
+    const periodStart = `${year}-${String(month).padStart(2, '0')}-01`;
+    const periodEnd = `${year}-${String(month).padStart(2, '0')}-${String(workingDaysInMonth).padStart(2, '0')}`;
+
+    // Check existing payroll for this period
+    const [existingPayrolls] = await db.query(
+      `SELECT id, status, total_gross_pay, total_net_pay, paid_at FROM payrolls WHERE period_month = ? AND period_year = ?`,
+      [month, year]
+    );
+
+    // Fetch all active employees with primary bank accounts
+    const [employees] = await db.query(
+      `SELECT e.id, e.first_name, e.last_name, e.employee_code, e.department, e.designation, e.status, e.email,
+              b.bank_name, b.account_number AS bank_account_no, b.ifsc_code AS bank_ifsc_code
+       FROM employees e
+       LEFT JOIN bank_accounts b ON b.employee_id = e.id AND b.is_primary = 1
+       WHERE e.status != 'inactive' AND e.status != 'terminated'
+       ORDER BY e.id ASC`
+    );
+
+    const warnings = [];
+    const auditedEmployees = [];
+
+    for (const emp of employees) {
+      // Check period-applicable contract
+      const [contracts] = await db.query(
+        `SELECT id, base_salary, hra_allowance, transport_allowance, other_allowance, tax_deduction_rate, start_date, end_date, status
+         FROM contracts
+         WHERE employee_id = ?
+           AND start_date <= ?
+           AND (end_date IS NULL OR end_date >= ?)
+           AND status != 'terminated'
+         ORDER BY start_date DESC
+         LIMIT 1`,
+        [emp.id, periodEnd, periodStart]
+      );
+
+      let contract = contracts[0];
+      if (!contract) {
+        const [fallback] = await db.query(
+          `SELECT id, base_salary, hra_allowance, transport_allowance, other_allowance, tax_deduction_rate, start_date, end_date, status
+           FROM contracts
+           WHERE employee_id = ? AND status = 'active'
+           ORDER BY start_date DESC LIMIT 1`,
+          [emp.id]
+        );
+        contract = fallback[0];
+      }
+
+      // Check pending leaves in this period
+      const [pendingLeaves] = await db.query(
+        `SELECT COUNT(*) AS count
+         FROM leave_requests
+         WHERE employee_id = ?
+           AND status = 'pending'
+           AND ((MONTH(start_date) = ? AND YEAR(start_date) = ?) OR (MONTH(end_date) = ? AND YEAR(end_date) = ?))`,
+        [emp.id, month, year, month, year]
+      );
+
+      const hasContract = !!contract;
+      const hasBank = !!(emp.bank_account_no && emp.bank_ifsc_code);
+      const pendingLeaveCount = Number(pendingLeaves[0]?.count || 0);
+
+      const empWarnings = [];
+      if (!hasContract) {
+        empWarnings.push('No valid contract configured for this period');
+        warnings.push({
+          id: `w-contract-${emp.id}`,
+          title: `${emp.first_name} ${emp.last_name}`,
+          text: `No active employment contract active for period ${month}/${year}. Base salary unconfigured.`,
+          type: 'error'
+        });
+      }
+      if (!hasBank) {
+        empWarnings.push('Missing direct deposit bank account or IFSC code');
+        warnings.push({
+          id: `w-bank-${emp.id}`,
+          title: `${emp.first_name} ${emp.last_name}`,
+          text: `Missing primary bank account or IFSC code for electronic direct deposit.`,
+          type: 'warning'
+        });
+      }
+      if (pendingLeaveCount > 0) {
+        empWarnings.push(`${pendingLeaveCount} unapproved leave request(s) awaiting approval`);
+        warnings.push({
+          id: `w-leave-${emp.id}`,
+          title: `${emp.first_name} ${emp.last_name}`,
+          text: `${pendingLeaveCount} pending leave request(s) in this pay period requiring HR approval before payroll finalization.`,
+          type: 'warning'
+        });
+      }
+
+      const isEligible = hasContract && hasBank;
+
+      auditedEmployees.push({
+        id: emp.id,
+        employee_code: emp.employee_code,
+        first_name: emp.first_name,
+        last_name: emp.last_name,
+        name: `${emp.first_name} ${emp.last_name}`,
+        department: emp.department,
+        designation: emp.designation,
+        email: emp.email,
+        has_contract: hasContract,
+        contract: contract || null,
+        has_bank: hasBank,
+        bank_name: emp.bank_name,
+        bank_account_no: emp.bank_account_no,
+        bank_ifsc_code: emp.bank_ifsc_code,
+        pending_leaves: pendingLeaveCount,
+        is_eligible: isEligible,
+        warnings: empWarnings
+      });
+    }
+
+    const eligibleCount = auditedEmployees.filter(e => e.is_eligible).length;
+
+    return res.json({
+      success: true,
+      period: {
+        month,
+        year,
+        period_name: `${new Date(year, month - 1).toLocaleString('default', { month: 'long' })} ${year}`,
+        start_date: periodStart,
+        end_date: periodEnd,
+        working_days: workingDaysInMonth
+      },
+      existing_payroll: existingPayrolls[0] || null,
+      total_employees: auditedEmployees.length,
+      eligible_count: eligibleCount,
+      ineligible_count: auditedEmployees.length - eligibleCount,
+      warnings,
+      employees: auditedEmployees
+    });
+  } catch (error) {
+    console.error('getPayrollEligibility error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // POST /api/payroll/generate
 const generatePayroll = async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
 
-    const { period_month, period_year } = req.body;
+    const { period_month, period_year, selected_employee_ids, selectedEmployeeIds } = req.body;
+    const targetEmpIds = selected_employee_ids || selectedEmployeeIds;
     const month = parseInt(period_month, 10);
     const year = parseInt(period_year, 10);
 
@@ -114,11 +261,19 @@ const generatePayroll = async (req, res) => {
     const periodEnd = `${year}-${String(month).padStart(2, '0')}-${String(workingDaysInMonth).padStart(2, '0')}`;
 
     // 1. Fetch eligible employees
-    const [employees] = await conn.query(
-      `SELECT e.id AS employee_id, e.first_name, e.last_name, e.employee_code, e.department, e.status
-       FROM employees e
-       WHERE e.status != 'inactive' AND e.status != 'terminated'`
-    );
+    let empQuery = `
+      SELECT e.id AS employee_id, e.first_name, e.last_name, e.employee_code, e.department, e.status
+      FROM employees e
+      WHERE e.status != 'inactive' AND e.status != 'terminated'
+    `;
+    const empQueryParams = [];
+
+    if (Array.isArray(targetEmpIds) && targetEmpIds.length > 0) {
+      empQuery += ` AND e.id IN (?)`;
+      empQueryParams.push(targetEmpIds.map(id => parseInt(id, 10)).filter(Boolean));
+    }
+
+    const [employees] = await conn.query(empQuery, empQueryParams);
 
     if (employees.length === 0) {
       await conn.rollback();
@@ -343,22 +498,53 @@ const markPayrollPaid = async (req, res) => {
   }
 };
 
+// POST /api/payroll/:id/send
+const sendPayrollPayslips = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [payroll] = await db.query(`SELECT * FROM payrolls WHERE id = ?`, [id]);
+    if (payroll.length === 0) {
+      return res.status(404).json({ success: false, message: 'Payroll run not found.' });
+    }
+
+    const [result] = await db.query(
+      `UPDATE payslips SET email_sent = 1 WHERE payroll_id = ?`,
+      [id]
+    );
+
+    return res.json({
+      success: true,
+      message: `Dispatched payslip email notifications to ${result.affectedRows} employee(s) successfully.`,
+      sent_count: result.affectedRows
+    });
+  } catch (error) {
+    console.error('sendPayrollPayslips error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export {
   getPayrolls,
   getPayrollById,
   getEmployeePayroll,
+  getPayrollEligibility,
   generatePayroll,
   processPayroll,
   approvePayroll,
-  markPayrollPaid
+  markPayrollPaid,
+  sendPayrollPayslips
 };
 
 export default {
   getPayrolls,
   getPayrollById,
   getEmployeePayroll,
+  getPayrollEligibility,
   generatePayroll,
   processPayroll,
   approvePayroll,
-  markPayrollPaid
+  markPayrollPaid,
+  sendPayrollPayslips
 };
+

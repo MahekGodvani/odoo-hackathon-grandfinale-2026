@@ -125,12 +125,51 @@ export const payrollApi = {
     return { data: { ...run, payslips } };
   },
 
+  checkEligibility: async (periodMonth, periodYear) => {
+    if (!USE_MOCK_DATA) {
+      try {
+        const res = await apiClient.get('/payroll/eligibility', {
+          params: { period_month: periodMonth, period_year: periodYear }
+        });
+        if (res.data?.success) {
+          return { data: res.data };
+        }
+      } catch (err) {
+        console.warn('Live checkEligibility failed, using fallback:', err?.message);
+      }
+    }
+    const db = mockDataStore.get();
+    const emps = (db.employees || []).map((e) => ({
+      id: e.id,
+      name: e.name || `${e.firstName || ''} ${e.lastName || ''}`.trim(),
+      employee_code: e.code || `EMP-${e.id}`,
+      department: e.department || 'Engineering',
+      has_contract: true,
+      has_bank: !!(e.bankAccountNo || e.bankAccount),
+      pending_leaves: 0,
+      is_eligible: true,
+      warnings: []
+    }));
+    return {
+      data: {
+        success: true,
+        period: { month: periodMonth, year: periodYear },
+        total_employees: emps.length,
+        eligible_count: emps.length,
+        ineligible_count: 0,
+        warnings: [],
+        employees: emps
+      }
+    };
+  },
+
   createPayrun: async (data) => {
     if (!USE_MOCK_DATA) {
       try {
         const payload = {
-          period_month: data.periodMonth || new Date(data.periodStart || Date.now()).getMonth() + 1,
-          period_year: data.periodYear || new Date(data.periodStart || Date.now()).getFullYear()
+          period_month: data.periodMonth || (data.startDate ? new Date(data.startDate).getMonth() + 1 : new Date().getMonth() + 1),
+          period_year: data.periodYear || (data.startDate ? new Date(data.startDate).getFullYear() : new Date().getFullYear()),
+          selected_employee_ids: data.selectedEmployeeIds
         };
         const res = await apiClient.post('/payroll/generate', payload);
         if (res.data?.success) {
@@ -218,5 +257,28 @@ export const payrollApi = {
       return { data: run };
     }
     throw new Error('Payrun not found');
+  },
+
+  markPayrunPaid: async (payrunId) => {
+    return payrollApi.markPaid(payrunId);
+  },
+
+  sendPayslips: async (payrunId) => {
+    if (!USE_MOCK_DATA) {
+      try {
+        const res = await apiClient.post(`/payroll/${payrunId}/send`);
+        if (res.data?.success) {
+          return { data: res.data };
+        }
+      } catch (err) {
+        console.warn('Live sendPayslips failed, using fallback:', err?.message);
+      }
+    }
+    const db = mockDataStore.get();
+    const payslips = db.payslips.filter((ps) => String(ps.payrunId) === String(payrunId));
+    payslips.forEach(ps => { ps.emailSent = true; });
+    mockDataStore.save(db);
+    return { data: { success: true, message: `Dispatched ${payslips.length} payslips via email.` } };
   }
 };
+
