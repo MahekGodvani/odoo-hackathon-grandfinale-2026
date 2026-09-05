@@ -25,7 +25,9 @@ import {
   Globe,
   Star,
   ExternalLink,
-  Laptop
+  Laptop,
+  Menu,
+  X
 } from 'lucide-react';
 
 /**
@@ -105,7 +107,7 @@ const LandingPage = () => {
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 md:hidden border border-slate-800 cursor-pointer"
           >
-            <Menu className="w-5 h-5" />
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
 
