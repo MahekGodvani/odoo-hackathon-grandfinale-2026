@@ -58,6 +58,7 @@ const DashboardPage = () => {
   }
 
   const { kpis, alerts, attendanceSummary, timeOffSummary, salaryByDepartment } = stats;
+  
 
   return (
     <div className="space-y-6">

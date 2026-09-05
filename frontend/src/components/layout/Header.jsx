@@ -157,9 +157,8 @@ const Header = ({ onMobileMenuOpen }) => {
                       setSelectedEntity(ent.name);
                       setShowEntityDropdown(false);
                     }}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between cursor-pointer ${
-                      selectedEntity === ent.name ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between cursor-pointer ${selectedEntity === ent.name ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-50'
+                      }`}
                   >
                     <div>
                       <p className="font-semibold">{ent.name}</p>
@@ -315,9 +314,8 @@ const Header = ({ onMobileMenuOpen }) => {
                 setShowQuickActionDropdown(false);
                 setShowNotificationsDropdown(false);
               }}
-              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer shrink-0 whitespace-nowrap ${
-                roleColors[role] || 'bg-slate-100 text-slate-700'
-              }`}
+              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer shrink-0 whitespace-nowrap ${roleColors[role] || 'bg-slate-100 text-slate-700'
+                }`}
             >
               <Shield className="w-3.5 h-3.5 shrink-0" />
               <span className="hidden sm:inline">Role:</span>
@@ -335,11 +333,10 @@ const Header = ({ onMobileMenuOpen }) => {
                     key={r}
                     onClick={() => {
                       switchRole(r);
-                      setShowRoleDropdown(false);
+                      setShowRoleDropdown(true);
                     }}
-                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between cursor-pointer ${
-                      role === r ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`w-full text-left px-3 py-2 text-xs transition-colors flex items-center justify-between cursor-pointer ${role === r ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-50'
+                      }`}
                   >
                     <span>{r}</span>
                     {role === r && <span className="w-2 h-2 rounded-full bg-indigo-600" />}

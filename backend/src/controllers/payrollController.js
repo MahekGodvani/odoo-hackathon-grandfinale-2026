@@ -109,21 +109,21 @@ const generatePayroll = async (req, res) => {
       payrollId = insertPayroll.insertId;
     }
 
+    const workingDaysInMonth = new Date(year, month, 0).getDate();
+    const periodStart = `${year}-${String(month).padStart(2, '0')}-01`;
+    const periodEnd = `${year}-${String(month).padStart(2, '0')}-${String(workingDaysInMonth).padStart(2, '0')}`;
+
+    // 1. Fetch eligible employees
     const [employees] = await conn.query(
-      `SELECT e.id AS employee_id, e.first_name, e.last_name,
-              c.id AS contract_id, c.base_salary, c.hra_allowance, 
-              c.transport_allowance, c.other_allowance, c.tax_deduction_rate
+      `SELECT e.id AS employee_id, e.first_name, e.last_name, e.employee_code, e.department, e.status
        FROM employees e
-       JOIN contracts c ON c.employee_id = e.id AND c.status = 'active'
        WHERE e.status != 'inactive' AND e.status != 'terminated'`
     );
 
     if (employees.length === 0) {
       await conn.rollback();
-      return res.status(400).json({ success: false, message: 'No active employees with active contracts found.' });
+      return res.status(400).json({ success: false, message: 'No eligible active employees found.' });
     }
-
-    const workingDaysInMonth = new Date(year, month, 0).getDate();
 
     let totalPayrollGross = 0;
     let totalPayrollDeductions = 0;
@@ -131,6 +131,38 @@ const generatePayroll = async (req, res) => {
     let payslipsCreated = 0;
 
     for (const emp of employees) {
+      // 2. Select the contract specifically valid for the payroll period dates (start_date <= periodEnd AND end_date >= periodStart)
+      const [contracts] = await conn.query(
+        `SELECT id, base_salary, hra_allowance, transport_allowance, other_allowance, tax_deduction_rate, start_date, end_date
+         FROM contracts
+         WHERE employee_id = ?
+           AND start_date <= ?
+           AND (end_date IS NULL OR end_date >= ?)
+           AND status != 'terminated'
+         ORDER BY start_date DESC
+         LIMIT 1`,
+        [emp.employee_id, periodEnd, periodStart]
+      );
+
+      // Fallback to active contract if period date boundary is open
+      let applicableContract = contracts[0];
+      if (!applicableContract) {
+        const [fallbackContracts] = await conn.query(
+          `SELECT id, base_salary, hra_allowance, transport_allowance, other_allowance, tax_deduction_rate, start_date, end_date
+           FROM contracts
+           WHERE employee_id = ? AND status = 'active'
+           ORDER BY start_date DESC
+           LIMIT 1`,
+          [emp.employee_id]
+        );
+        applicableContract = fallbackContracts[0];
+      }
+
+      if (!applicableContract) {
+        // Skip employees without an active or period-applicable contract
+        continue;
+      }
+
       const [attRows] = await conn.query(
         `SELECT COUNT(*) AS present_count 
          FROM attendance 
@@ -163,17 +195,17 @@ const generatePayroll = async (req, res) => {
         }
       }
 
-      // Salary Calculation Formula
-      const baseSalary = parseFloat(emp.base_salary) || 0;
-      const hra = parseFloat(emp.hra_allowance) || 0;
-      const transport = parseFloat(emp.transport_allowance) || 0;
-      const other = parseFloat(emp.other_allowance) || 0;
+      // Salary Calculation Formula using Period-Applicable Contract
+      const baseSalary = parseFloat(applicableContract.base_salary) || 0;
+      const hra = parseFloat(applicableContract.hra_allowance) || 0;
+      const transport = parseFloat(applicableContract.transport_allowance) || 0;
+      const other = parseFloat(applicableContract.other_allowance) || 0;
       const allowancesTotal = hra + transport + other;
       const grossSalary = baseSalary + allowancesTotal;
 
       const perDaySalary = baseSalary / workingDaysInMonth;
       const unpaidDeductions = parseFloat((perDaySalary * unpaidLeaveDays).toFixed(2));
-      const taxRate = parseFloat(emp.tax_deduction_rate) || 0;
+      const taxRate = parseFloat(applicableContract.tax_deduction_rate) || 0;
       const taxDeductions = parseFloat(((grossSalary - unpaidDeductions) * (taxRate / 100)).toFixed(2));
       const totalDeductions = parseFloat((unpaidDeductions + taxDeductions).toFixed(2));
       const netSalary = parseFloat((grossSalary - totalDeductions).toFixed(2));
@@ -184,7 +216,7 @@ const generatePayroll = async (req, res) => {
           base_salary, allowances_total, gross_salary, tax_deductions, unpaid_deductions, total_deductions, net_salary, payment_status)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
         [
-          payrollId, emp.employee_id, emp.contract_id, workingDaysInMonth, presentDays, paidLeaveDays, unpaidLeaveDays,
+          payrollId, emp.employee_id, applicableContract.id, workingDaysInMonth, presentDays, paidLeaveDays, unpaidLeaveDays,
           baseSalary, allowancesTotal, grossSalary, taxDeductions, unpaidDeductions, totalDeductions, netSalary
         ]
       );
