@@ -27,14 +27,20 @@ const EmployeeFormModal = ({ isOpen, onClose, employee, onSuccess }) => {
     ifsc: '',
   });
 
-  const [schedules, setSchedules] = useState([]);
+  const [schedules, setSchedules] = useState([
+    { id: 'sch-1', name: 'Standard Full-Time (40h)' },
+    { id: 'sch-2', name: 'Engineering Shift (40h)' },
+    { id: 'sch-3', name: 'Part-Time Morning (20h)' }
+  ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     async function loadSchedules() {
       try {
         const res = await scheduleApi.getSchedules();
-        setSchedules(res.data);
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          setSchedules(res.data);
+        }
       } catch (err) {
         console.error('Failed to load schedules', err);
       }

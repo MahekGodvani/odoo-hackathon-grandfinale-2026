@@ -25,18 +25,25 @@ const normalizePayrun = (p) => ({
 export const payrollApi = {
   getSalaryStructures: async () => {
     const db = mockDataStore.get();
-    return { data: db.salaryStructures };
+    return { 
+      data: db.salaryStructures || [
+        { id: 'struct-1', name: 'Standard Regular Structure', status: 'Active', employeeCount: 5 },
+        { id: 'struct-2', name: 'Executive Leadership Structure', status: 'Active', employeeCount: 2 },
+        { id: 'struct-3', name: 'Intern / Contract Structure', status: 'Active', employeeCount: 1 }
+      ] 
+    };
   },
 
   createSalaryStructure: async (data) => {
     const db = mockDataStore.get();
     const newStruct = {
-      id: `struct-${db.salaryStructures.length + 1}`,
+      id: `struct-${(db.salaryStructures?.length || 0) + 1}`,
       employeeCount: 0,
       status: 'Active',
       ruleIds: ['rule-1', 'rule-2', 'rule-3', 'rule-4', 'rule-5'],
       ...data,
     };
+    db.salaryStructures = db.salaryStructures || [];
     db.salaryStructures.push(newStruct);
     mockDataStore.save(db);
     return { data: newStruct };
@@ -44,7 +51,7 @@ export const payrollApi = {
 
   getSalaryRules: async () => {
     const db = mockDataStore.get();
-    return { data: db.salaryRules };
+    return { data: db.salaryRules || [] };
   },
 
   createSalaryRule: async (data) => {
