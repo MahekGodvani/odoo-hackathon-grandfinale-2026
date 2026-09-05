@@ -55,11 +55,22 @@ JWT_SECRET=peoplepay360_super_secret_jwt_key_2026
 
 ### 3. Start Backend Server
 ```bash
-# In your terminal inside d:\demo
+# In your terminal inside d:\demo\backend
 npm start
 # or development mode with auto-reload:
 npm run dev
 ```
+
+---
+
+## 📖 Interactive Swagger API Documentation
+
+Once the server is running, open your browser and navigate to:
+👉 **[http://localhost:5000/api-docs](http://localhost:5000/api-docs)**
+
+- **Interactive Testing**: Click "Try it out" on any endpoint to test live requests directly from your browser.
+- **Bearer Token Auth**: Click the **Authorize 🔓** button at the top to paste your `accessToken`.
+- **Raw OpenAPI Specification**: Available at [`http://localhost:5000/api-docs.json`](http://localhost:5000/api-docs.json).
 
 ---
 

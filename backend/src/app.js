@@ -10,6 +10,7 @@ const leaveRoutes = require('./routes/leaveRoutes');
 const payrollRoutes = require('./routes/payrollRoutes');
 const payslipRoutes = require('./routes/payslipRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const { setupSwagger } = require('./config/swagger');
 
 const app = express();
 
@@ -18,13 +19,18 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Setup Interactive Swagger API Documentation
+setupSwagger(app);
+
 // Root endpoint: API Overview
 app.get('/', (req, res) => res.json({
   name: 'PeoplePay360 Backend API',
   version: '1.0.0',
   status: 'Running',
+  swagger_ui: 'http://localhost:5000/api-docs',
   business_flow: 'Employee -> Contract -> Attendance & Leave -> Payroll -> Salary Calculation -> Payslip -> Payment -> Dashboard',
   endpoints: {
+    docs: ['GET /api-docs', 'GET /api-docs.json'],
     auth: [
       'POST /api/auth/login',
       'POST /api/auth/refresh-token',
