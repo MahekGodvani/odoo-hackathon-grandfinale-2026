@@ -73,27 +73,27 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Mobile Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar Frame */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-white text-slate-600 transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } flex flex-col border-r border-slate-800 shadow-2xl`}
+        } flex flex-col border-r border-slate-200/80 shadow-xs`}
       >
         {/* Brand Header */}
-        <div className="h-16 px-6 flex items-center justify-between border-b border-slate-800/90 shrink-0 bg-slate-950/40">
+        <div className="h-16 px-6 flex items-center justify-between border-b border-slate-100 shrink-0 bg-white">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-indigo-600/30">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-indigo-600/25">
               360
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
-                <h1 className="font-extrabold text-white tracking-tight text-sm leading-tight">PeoplePay360</h1>
-                <span className="bg-indigo-500/20 text-indigo-400 text-[9px] font-bold px-1.5 py-0.2 rounded border border-indigo-500/30">
+                <h1 className="font-extrabold text-slate-900 tracking-tight text-sm leading-tight">PeoplePay360</h1>
+                <span className="bg-indigo-50 text-indigo-700 text-[9px] font-bold px-1.5 py-0.2 rounded border border-indigo-200">
                   PRO
                 </span>
               </div>
@@ -124,8 +124,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       className={({ isActive }) =>
                         `flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                           isActive
-                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25 border border-indigo-500/30'
-                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/70'
+                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/80 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                         }`
                       }
                     >
@@ -137,8 +137,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         <span
                           className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2 whitespace-nowrap ${
                             item.badge === 'ROI'
-                              ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
-                              : 'bg-slate-800 text-slate-400 border border-slate-700/60'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : 'bg-slate-100 text-slate-600 border border-slate-200'
                           }`}
                         >
                           {item.badge}
@@ -153,13 +153,13 @@ const Sidebar = ({ isOpen, onClose }) => {
         </nav>
 
         {/* Footer Enterprise Trust Badges */}
-        <div className="p-4 border-t border-slate-800/90 shrink-0 bg-slate-950/40">
-          <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-700/40 text-center">
-            <div className="flex items-center justify-center space-x-1 text-[11px] font-bold text-slate-300">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="p-4 border-t border-slate-100 shrink-0 bg-slate-50/50">
+          <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs text-center">
+            <div className="flex items-center justify-center space-x-1 text-[11px] font-bold text-slate-800">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
               <span>Enterprise Grade v2.4</span>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1 flex items-center justify-center space-x-1">
+            <p className="text-[10px] text-slate-500 mt-1 flex items-center justify-center space-x-1">
               <Lock className="w-2.5 h-2.5 text-slate-400" />
               <span>SOC-2 • GDPR • ISO 27001</span>
             </p>
