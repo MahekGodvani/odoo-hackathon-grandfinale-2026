@@ -25,17 +25,20 @@ import PayslipDetailPage from './pages/payroll/PayslipDetailPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import UsersPage from './pages/users/UsersPage';
 import BusinessModelPage from './pages/business/BusinessModelPage';
+import LandingPage from './pages/landing/LandingPage';
 
 /**
  * PEOPLEPAY360 - ROUTER APP ENTRY POINT
- * Configures all public and role-protected routes for the operational platform.
+ * Configures all public, landing, and role-protected routes for the operational platform.
  */
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Route */}
+          {/* Public Landing & Authentication Routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/landing" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
 
           {/* Authenticated Layout Frame */}
@@ -46,7 +49,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
 
             {/* Employee Operational Hub Routes */}
