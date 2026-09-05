@@ -290,7 +290,7 @@ const LandingPage = () => {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                     <p className="text-[10px] text-slate-400">Total Net Disbursed</p>
-                    <p className="text-lg font-extrabold text-white mt-1">$48,750.00</p>
+                    <p className="text-lg font-extrabold text-white mt-1">₹3,85,000.00</p>
                   </div>
                   <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
                     <p className="text-[10px] text-slate-400">Processed Slips</p>
@@ -481,7 +481,7 @@ const LandingPage = () => {
                 </div>
                 <div className="flex justify-between border-t border-slate-800 pt-2 font-bold text-white">
                   <span>Computed Net Salary:</span>
-                  <span className="text-indigo-400 font-mono text-sm">$8,250.00</span>
+                  <span className="text-indigo-400 font-mono text-sm">₹62,500.00</span>
                 </div>
               </div>
             </div>
@@ -494,7 +494,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-3xl mx-auto mb-12">
             <h2 className="text-xs font-bold uppercase tracking-widest text-indigo-400">Commercial Flexibility</h2>
-            <h3 className="text-3xl sm:text-4xl font-extrabold text-white mt-2">Transparent Hybrid PEPM Pricing</h3>
+            <h3 className="text-3xl sm:text-4xl font-extrabold text-white mt-2">Transparent Hybrid PEPM Pricing (INR)</h3>
             <p className="text-sm text-slate-400 mt-3">
               Predictable, scalable plans designed for small businesses, high-growth mid-market, and outsourced payroll bureaus.
             </p>
@@ -505,7 +505,7 @@ const LandingPage = () => {
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Starter SMB</span>
                 <h4 className="text-xl font-bold text-white mt-1">Essential HR</h4>
-                <p className="text-2xl font-extrabold text-white mt-3">$49 <span className="text-xs font-normal text-slate-400">/ mo + $4/emp</span></p>
+                <p className="text-2xl font-extrabold text-white mt-3">₹2,999 <span className="text-xs font-normal text-slate-400">/ mo + ₹249/emp</span></p>
                 <ul className="mt-4 space-y-2 text-xs text-slate-300">
                   <li className="flex items-center"><Check className="w-3.5 h-3.5 text-emerald-400 mr-2" /> Up to 30 Staff</li>
                   <li className="flex items-center"><Check className="w-3.5 h-3.5 text-emerald-400 mr-2" /> Contracts & Attendance</li>
@@ -524,7 +524,7 @@ const LandingPage = () => {
               <div>
                 <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Growth</span>
                 <h4 className="text-xl font-bold text-white mt-1">Professional</h4>
-                <p className="text-2xl font-extrabold text-white mt-3">$149 <span className="text-xs font-normal text-slate-400">/ mo + $6/emp</span></p>
+                <p className="text-2xl font-extrabold text-white mt-3">₹8,999 <span className="text-xs font-normal text-slate-400">/ mo + ₹399/emp</span></p>
                 <ul className="mt-4 space-y-2 text-xs text-slate-300">
                   <li className="flex items-center"><Check className="w-3.5 h-3.5 text-emerald-400 mr-2" /> Up to 250 Staff</li>
                   <li className="flex items-center"><Check className="w-3.5 h-3.5 text-emerald-400 mr-2" /> Dynamic Salary Rule Engine</li>
@@ -541,7 +541,7 @@ const LandingPage = () => {
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Scale</span>
                 <h4 className="text-xl font-bold text-white mt-1">Enterprise</h4>
-                <p className="text-2xl font-extrabold text-white mt-3">$499 <span className="text-xs font-normal text-slate-400">/ mo + $8/emp</span></p>
+                <p className="text-2xl font-extrabold text-white mt-3">₹24,999 <span className="text-xs font-normal text-slate-400">/ mo + ₹599/emp</span></p>
                 <ul className="mt-4 space-y-2 text-xs text-slate-300">
                   <li className="flex items-center"><Check className="w-3.5 h-3.5 text-emerald-400 mr-2" /> Unlimited Multi-Entity Staff</li>
                   <li className="flex items-center"><Check className="w-3.5 h-3.5 text-emerald-400 mr-2" /> Custom Formulas & Biometric Sync</li>

@@ -31,14 +31,14 @@ const BusinessModelPage = () => {
   // Pricing calculations
   const discountMultiplier = billingCycle === 'annual' ? 0.8 : 1.0;
 
-  // ROI Calculations
-  const hourlyRateHR = 35; // $35/hour average HR specialist cost
-  const errorCorrectionCostPerMonth = 450; // $450/month in compliance risk & manual error fixes
+  // ROI Calculations in INR (₹)
+  const hourlyRateHR = 650; // ₹650/hour average HR specialist cost
+  const errorCorrectionCostPerMonth = 15000; // ₹15,000/month in compliance risk & manual error fixes
   const currentAnnualCost = (payrollHoursPerMonth * 12 * hourlyRateHR) + (errorCorrectionCostPerMonth * 12);
 
   // With PeoplePay360: 75% time reduction
   const newHoursPerMonth = Math.round(payrollHoursPerMonth * 0.25);
-  const softwareCostAnnual = ((149 + (employeeCount * 6)) * 12) * discountMultiplier;
+  const softwareCostAnnual = ((8999 + (employeeCount * 399)) * 12) * discountMultiplier;
   const newAnnualCost = (newHoursPerMonth * 12 * hourlyRateHR) + softwareCostAnnual;
   const annualSavings = Math.max(0, currentAnnualCost - newAnnualCost);
   const annualHoursSaved = (payrollHoursPerMonth - newHoursPerMonth) * 12;
@@ -142,12 +142,12 @@ const BusinessModelPage = () => {
                 <div className="mt-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline">
                     <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                      ${Math.round(49 * discountMultiplier)}
+                      ₹{Math.round(2999 * discountMultiplier).toLocaleString()}
                     </span>
                     <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">/ mo base</span>
                   </div>
                   <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
-                    + ${Math.round(4 * discountMultiplier)} / employee / mo
+                    + ₹{Math.round(249 * discountMultiplier)} / employee / mo
                   </p>
                 </div>
                 <ul className="space-y-2.5 mt-5 text-xs text-slate-600 dark:text-slate-300">
@@ -177,12 +177,12 @@ const BusinessModelPage = () => {
                 <div className="mt-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline">
                     <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                      ${Math.round(149 * discountMultiplier)}
+                      ₹{Math.round(8999 * discountMultiplier).toLocaleString()}
                     </span>
                     <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">/ mo base</span>
                   </div>
                   <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
-                    + ${Math.round(6 * discountMultiplier)} / employee / mo
+                    + ₹{Math.round(399 * discountMultiplier)} / employee / mo
                   </p>
                 </div>
                 <ul className="space-y-2.5 mt-5 text-xs text-slate-600 dark:text-slate-300">
@@ -210,12 +210,12 @@ const BusinessModelPage = () => {
                 <div className="mt-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline">
                     <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                      ${Math.round(499 * discountMultiplier)}
+                      ₹{Math.round(24999 * discountMultiplier).toLocaleString()}
                     </span>
                     <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">/ mo base</span>
                   </div>
                   <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mt-1">
-                    + ${Math.round(8 * discountMultiplier)} / employee / mo
+                    + ₹{Math.round(599 * discountMultiplier)} / employee / mo
                   </p>
                 </div>
                 <ul className="space-y-2.5 mt-5 text-xs text-slate-600 dark:text-slate-300">
@@ -242,12 +242,12 @@ const BusinessModelPage = () => {
                 <div className="mt-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline">
                     <span className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                      ${Math.round(899 * discountMultiplier)}
+                      ₹{Math.round(49999 * discountMultiplier).toLocaleString()}
                     </span>
                     <span className="text-xs text-slate-500 dark:text-slate-400 ml-1">/ mo base</span>
                   </div>
                   <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
-                    + ${Math.round(3.50 * discountMultiplier)} / client employee
+                    + ₹{Math.round(199 * discountMultiplier)} / client employee
                   </p>
                 </div>
                 <ul className="space-y-2.5 mt-5 text-xs text-slate-600 dark:text-slate-300">
@@ -271,8 +271,8 @@ const BusinessModelPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div className="text-xs font-bold text-slate-900 dark:text-white">Direct Payout Rails</div>
-                <div className="text-lg font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">$0.25 <span className="text-xs font-normal text-slate-500">/ txn</span></div>
-                <p className="text-[11px] text-slate-500 mt-1">1-click automated ACH / NEFT salary bank disbursement.</p>
+                <div className="text-lg font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">₹15 <span className="text-xs font-normal text-slate-500">/ txn</span></div>
+                <p className="text-[11px] text-slate-500 mt-1">1-click automated NEFT / IMPS / UPI salary disbursement.</p>
               </div>
               <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div className="text-xs font-bold text-slate-900 dark:text-white">Earned Wage Access</div>
@@ -281,12 +281,12 @@ const BusinessModelPage = () => {
               </div>
               <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div className="text-xs font-bold text-slate-900 dark:text-white">AI Payroll Auditor</div>
-                <div className="text-lg font-extrabold text-purple-600 dark:text-purple-400 mt-1">$1.50 <span className="text-xs font-normal text-slate-500">/ emp / mo</span></div>
+                <div className="text-lg font-extrabold text-purple-600 dark:text-purple-400 mt-1">₹99 <span className="text-xs font-normal text-slate-500">/ emp / mo</span></div>
                 <p className="text-[11px] text-slate-500 mt-1">Detects overtime spikes, duplicate payments & tax drift.</p>
               </div>
               <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                 <div className="text-xs font-bold text-slate-900 dark:text-white">Global Contractor EOR</div>
-                <div className="text-lg font-extrabold text-amber-600 dark:text-amber-400 mt-1">$29.00 <span className="text-xs font-normal text-slate-500">/ contractor</span></div>
+                <div className="text-lg font-extrabold text-amber-600 dark:text-amber-400 mt-1">₹1,999 <span className="text-xs font-normal text-slate-500">/ contractor</span></div>
                 <p className="text-[11px] text-slate-500 mt-1">International contractor compliance & currency payouts.</p>
               </div>
             </div>
@@ -355,11 +355,11 @@ const BusinessModelPage = () => {
                 <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs space-y-1">
                   <div className="text-slate-500 dark:text-slate-400 flex justify-between">
                     <span>Calculated with Tier:</span>
-                    <span className="font-semibold text-slate-900 dark:text-white">Professional Plan ($149 + $6/emp)</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">Professional Plan (₹8,999 + ₹399/emp)</span>
                   </div>
                   <div className="text-slate-500 dark:text-slate-400 flex justify-between">
                     <span>Annual Software Investment:</span>
-                    <span className="font-semibold text-slate-900 dark:text-white">${Math.round(softwareCostAnnual).toLocaleString()} / yr</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">₹{Math.round(softwareCostAnnual).toLocaleString()} / yr</span>
                   </div>
                 </div>
               </div>
@@ -369,7 +369,7 @@ const BusinessModelPage = () => {
                 <div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/50 flex flex-col justify-between">
                   <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Annual Net Savings</span>
                   <div className="text-3xl font-extrabold text-emerald-700 dark:text-emerald-300 mt-2">
-                    ${Math.round(annualSavings).toLocaleString()}
+                    ₹{Math.round(annualSavings).toLocaleString()}
                   </div>
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">75% reduction in manual calculation & error rectification.</p>
                 </div>
