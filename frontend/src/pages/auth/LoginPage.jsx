@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, ROLES } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Eye, EyeOff, Lock, Mail, ShieldCheck, AlertCircle } from 'lucide-react';
 import Button from '../../components/common/Button';
 
@@ -10,8 +10,7 @@ import Button from '../../components/common/Button';
  */
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  
+  const { login } = useAuth();  
   const [email, setEmail] = useState('rahul.patel@peoplepay360.com');
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
