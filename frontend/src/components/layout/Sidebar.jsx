@@ -13,7 +13,8 @@ import {
   DollarSign,
   BarChart3,
   UserCheck,
-  CreditCard
+  CreditCard,
+  TrendingUp
 } from 'lucide-react';
 
 /**
@@ -53,6 +54,12 @@ const Sidebar = ({ isOpen, onClose }) => {
       title: 'REPORTS',
       items: [
         { name: 'Payroll Dashboard', path: '/reports', icon: BarChart3, roles: [ROLES.HR_MANAGER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN] },
+      ]
+    },
+    {
+      title: 'COMMERCIAL',
+      items: [
+        { name: 'Business Model & Pricing', path: '/business-model', icon: TrendingUp, roles: [] },
       ]
     },
     {

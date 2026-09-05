@@ -24,6 +24,7 @@ import PayslipsPage from './pages/payroll/PayslipsPage';
 import PayslipDetailPage from './pages/payroll/PayslipDetailPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import UsersPage from './pages/users/UsersPage';
+import BusinessModelPage from './pages/business/BusinessModelPage';
 
 /**
  * PEOPLEPAY360 - ROUTER APP ENTRY POINT
@@ -73,6 +74,9 @@ function App() {
             {/* Reports & System Administration */}
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/users" element={<UsersPage />} />
+
+            {/* Commercial & Business Strategy */}
+            <Route path="/business-model" element={<BusinessModelPage />} />
           </Route>
 
           {/* Catch-all redirect */}
