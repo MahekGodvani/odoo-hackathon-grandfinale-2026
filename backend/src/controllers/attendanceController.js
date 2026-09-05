@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // Helper to compute total hours
 const calculateHours = (checkIn, checkOut) => {
@@ -241,7 +241,18 @@ const logAttendance = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  checkIn,
+  checkOut,
+  logAttendance,
+  getAttendanceLogs,
+  getEmployeeAttendance,
+  getMonthlyAttendance,
+  updateAttendance,
+  deleteAttendance
+};
+
+export default {
   checkIn,
   checkOut,
   logAttendance,

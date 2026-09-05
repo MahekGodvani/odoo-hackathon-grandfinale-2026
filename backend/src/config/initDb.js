@@ -1,7 +1,13 @@
-const fs = require('fs');
-const path = require('path');
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const initDatabase = async () => {
   console.log('🔄 Initializing MySQL database for PeoplePay360...');
@@ -14,7 +20,6 @@ const initDatabase = async () => {
 
   let connection;
   try {
-    // 1. Connect to MySQL server (without specifying DB first to create it if not exists)
     connection = await mysql.createConnection({
       host: dbHost,
       user: dbUser,
@@ -25,12 +30,10 @@ const initDatabase = async () => {
 
     console.log(`📡 Connected to MySQL at ${dbHost}:${dbPort}`);
 
-    // 2. Ensure database exists
     await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
     await connection.query(`USE \`${dbName}\`;`);
     console.log(`📁 Database \`${dbName}\` is ready.`);
 
-    // 3. Read schema.sql
     const schemaPath = path.join(__dirname, '../../schema.sql');
     if (!fs.existsSync(schemaPath)) {
       throw new Error(`schema.sql not found at ${schemaPath}`);
@@ -38,7 +41,6 @@ const initDatabase = async () => {
 
     const sqlContent = fs.readFileSync(schemaPath, 'utf8');
 
-    // 4. Execute all SQL statements
     await connection.query(sqlContent);
 
     console.log('========================================================');
@@ -58,3 +60,5 @@ const initDatabase = async () => {
 };
 
 initDatabase();
+
+export default initDatabase;

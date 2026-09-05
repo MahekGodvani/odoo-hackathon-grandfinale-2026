@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import dashboardController from '../controllers/dashboardController.js';
+import { authenticate, authorize } from '../middlewares/auth.js';
+
 const router = express.Router();
-const dashboardController = require('../controllers/dashboardController');
-const { authenticate, authorize } = require('../middlewares/auth');
 
 router.get('/admin', authenticate, authorize(['admin']), dashboardController.getAdminDashboard);
 router.get('/hr', authenticate, authorize(['admin', 'hr']), dashboardController.getHrDashboard);
@@ -10,4 +11,4 @@ router.get('/payroll-summary', authenticate, authorize(['admin', 'payroll', 'hr'
 router.get('/attendance-summary', authenticate, authorize(['admin', 'hr', 'payroll']), dashboardController.getAttendanceSummary);
 router.get('/stats', authenticate, dashboardController.getDashboardStats);
 
-module.exports = router;
+export default router;

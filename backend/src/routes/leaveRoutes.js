@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import leaveController from '../controllers/leaveController.js';
+import { authenticate, authorize } from '../middlewares/auth.js';
+
 const router = express.Router();
-const leaveController = require('../controllers/leaveController');
-const { authenticate, authorize } = require('../middlewares/auth');
 
 router.get('/', authenticate, leaveController.getLeaveRequests);
 router.get('/:id', authenticate, leaveController.getLeaveById);
@@ -11,4 +12,4 @@ router.post('/:id/approve', authenticate, authorize(['admin', 'hr']), leaveContr
 router.post('/:id/reject', authenticate, authorize(['admin', 'hr']), leaveController.rejectLeave);
 router.delete('/:id', authenticate, leaveController.deleteLeave);
 
-module.exports = router;
+export default router;

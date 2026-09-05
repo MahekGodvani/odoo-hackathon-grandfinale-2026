@@ -1,23 +1,23 @@
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
 
-const authRoutes = require('./routes/authRoutes');
-const companyRoutes = require('./routes/companyRoutes');
-const employeeRoutes = require('./routes/employeeRoutes');
-const contractRoutes = require('./routes/contractRoutes');
-const salaryRoutes = require('./routes/salaryRoutes');
-const attendanceRoutes = require('./routes/attendanceRoutes');
-const leaveRoutes = require('./routes/leaveRoutes');
-const payrollRoutes = require('./routes/payrollRoutes');
-const payslipRoutes = require('./routes/payslipRoutes');
-const bankPaymentRoutes = require('./routes/bankPaymentRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
-const settingsRoutes = require('./routes/settingsRoutes');
-const reportRoutes = require('./routes/reportRoutes');
-const roleRoutes = require('./routes/roleRoutes');
-const { setupSwagger } = require('./config/swagger');
+import authRoutes from './routes/authRoutes.js';
+import companyRoutes from './routes/companyRoutes.js';
+import employeeRoutes from './routes/employeeRoutes.js';
+import contractRoutes from './routes/contractRoutes.js';
+import salaryRoutes from './routes/salaryRoutes.js';
+import attendanceRoutes from './routes/attendanceRoutes.js';
+import leaveRoutes from './routes/leaveRoutes.js';
+import payrollRoutes from './routes/payrollRoutes.js';
+import payslipRoutes from './routes/payslipRoutes.js';
+import bankPaymentRoutes from './routes/bankPaymentRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import roleRoutes from './routes/roleRoutes.js';
+import { setupSwagger } from './config/swagger.js';
 
 const app = express();
 
@@ -84,4 +84,4 @@ app.use((err, req, res, next) => {
   return res.status(500).json({ success: false, message: err?.message ?? 'Internal server error' });
 });
 
-module.exports = app;
+export default app;

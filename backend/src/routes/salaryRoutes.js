@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import salaryController from '../controllers/salaryController.js';
+import { authenticate, authorize } from '../middlewares/auth.js';
+
 const router = express.Router();
-const salaryController = require('../controllers/salaryController');
-const { authenticate, authorize } = require('../middlewares/auth');
 
 router.get('/', authenticate, salaryController.getSalaries);
 router.get('/:employeeId', authenticate, salaryController.getSalaryByEmployeeId);
@@ -9,4 +10,4 @@ router.post('/', authenticate, authorize(['admin', 'hr', 'payroll']), salaryCont
 router.put('/:id', authenticate, authorize(['admin', 'hr', 'payroll']), salaryController.updateSalary);
 router.delete('/:id', authenticate, authorize(['admin', 'hr', 'payroll']), salaryController.deleteSalary);
 
-module.exports = router;
+export default router;

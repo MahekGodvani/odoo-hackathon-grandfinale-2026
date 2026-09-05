@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import companyController from '../controllers/companyController.js';
+import { authenticate, authorize } from '../middlewares/auth.js';
+
 const router = express.Router();
-const companyController = require('../controllers/companyController');
-const { authenticate, authorize } = require('../middlewares/auth');
 
 router.get('/', authenticate, companyController.getCompanies);
 router.get('/:id', authenticate, companyController.getCompanyById);
@@ -9,4 +10,4 @@ router.post('/', authenticate, authorize(['admin']), companyController.createCom
 router.put('/:id', authenticate, authorize(['admin']), companyController.updateCompany);
 router.delete('/:id', authenticate, authorize(['admin']), companyController.deleteCompany);
 
-module.exports = router;
+export default router;

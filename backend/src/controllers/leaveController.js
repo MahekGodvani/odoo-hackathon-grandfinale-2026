@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // GET /api/leaves
 const getLeaveRequests = async (req, res) => {
@@ -180,7 +180,17 @@ const deleteLeave = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  getLeaveRequests,
+  getLeaveById,
+  submitLeaveRequest,
+  updateLeave,
+  approveLeave,
+  rejectLeave,
+  deleteLeave
+};
+
+export default {
   getLeaveRequests,
   getLeaveById,
   submitLeaveRequest,

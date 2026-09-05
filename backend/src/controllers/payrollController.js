@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // GET /api/payroll
 const getPayrolls = async (req, res) => {
@@ -311,7 +311,17 @@ const markPayrollPaid = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  getPayrolls,
+  getPayrollById,
+  getEmployeePayroll,
+  generatePayroll,
+  processPayroll,
+  approvePayroll,
+  markPayrollPaid
+};
+
+export default {
   getPayrolls,
   getPayrollById,
   getEmployeePayroll,

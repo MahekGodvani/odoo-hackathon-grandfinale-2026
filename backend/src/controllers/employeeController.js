@@ -1,7 +1,7 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // List all employees (with active contract summary)
-const getAllEmployees = async (req, res) => {
+export const getAllEmployees = async (req, res) => {
   try {
     const { department, status, search, company_id } = req.query;
     let query = `
@@ -48,7 +48,7 @@ const getAllEmployees = async (req, res) => {
 };
 
 // Get single employee by ID
-const getEmployeeById = async (req, res) => {
+export const getEmployeeById = async (req, res) => {
   try {
     const { id } = req.params;
     const [employees] = await db.query(
@@ -76,7 +76,7 @@ const getEmployeeById = async (req, res) => {
 };
 
 // Create new employee
-const createEmployee = async (req, res) => {
+export const createEmployee = async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
@@ -103,14 +103,12 @@ const createEmployee = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing required employee fields.' });
     }
 
-    // 1. Create User
     const [userResult] = await conn.query(
       `INSERT INTO users (company_id, email, password_hash, role) VALUES (?, ?, ?, ?)`,
       [company_id, email, `hash_${password}`, role]
     );
     const userId = userResult.insertId;
 
-    // 2. Create Employee
     const [empResult] = await conn.query(
       `INSERT INTO employees 
        (company_id, user_id, employee_code, first_name, last_name, email, phone, department, designation, joining_date, status)
@@ -119,7 +117,6 @@ const createEmployee = async (req, res) => {
     );
     const empId = empResult.insertId;
 
-    // 3. Optional Bank Account
     if (bank_name && bank_account_no) {
       await conn.query(
         `INSERT INTO bank_accounts (employee_id, bank_name, account_number, ifsc_code, is_primary)
@@ -145,7 +142,7 @@ const createEmployee = async (req, res) => {
 };
 
 // Update employee details
-const updateEmployee = async (req, res) => {
+export const updateEmployee = async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
@@ -180,7 +177,6 @@ const updateEmployee = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
 
-    // Update bank info if provided
     if (bank_name || bank_account_no) {
       await conn.query(
         `INSERT INTO bank_accounts (employee_id, bank_name, account_number, ifsc_code, is_primary)
@@ -205,7 +201,7 @@ const updateEmployee = async (req, res) => {
 };
 
 // DELETE /api/employees/:id
-const deleteEmployee = async (req, res) => {
+export const deleteEmployee = async (req, res) => {
   try {
     const { id } = req.params;
     const [result] = await db.query(`DELETE FROM employees WHERE id = ?`, [id]);
@@ -219,7 +215,7 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   getAllEmployees,
   getEmployeeById,
   createEmployee,

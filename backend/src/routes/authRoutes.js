@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import authController from '../controllers/authController.js';
+import { authenticate, optionalAuthenticate } from '../middlewares/auth.js';
+
 const router = express.Router();
-const authController = require('../controllers/authController');
-const { authenticate, optionalAuthenticate } = require('../middlewares/auth');
 
 // Public Auth Endpoints
 router.post('/register', authController.register);
@@ -17,4 +18,4 @@ router.post('/logout', optionalAuthenticate, authController.logout);
 router.get('/me', authenticate, authController.getProfile);
 router.put('/profile', authenticate, authController.updateProfile);
 
-module.exports = router;
+export default router;

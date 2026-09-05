@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // GET /api/salaries
 const getSalaries = async (req, res) => {
@@ -143,7 +143,15 @@ const deleteSalary = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  getSalaries,
+  getSalaryByEmployeeId,
+  createSalary,
+  updateSalary,
+  deleteSalary
+};
+
+export default {
   getSalaries,
   getSalaryByEmployeeId,
   createSalary,

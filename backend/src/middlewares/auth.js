@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? process.env.JWT_SECRET ?? 'peoplepay360_access_secret_2026';
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? 'peoplepay360_refresh_secret_2026';
@@ -6,16 +6,16 @@ const ACCESS_EXPIRY = process.env.ACCESS_TOKEN_EXPIRES_IN ?? '15m';
 const REFRESH_EXPIRY = process.env.REFRESH_TOKEN_EXPIRES_IN ?? '7d';
 
 // Generate short-lived Access Token (15 minutes)
-const generateAccessToken = (payload) => jwt.sign(payload, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRY });
+export const generateAccessToken = (payload) => jwt.sign(payload, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRY });
 
 // Generate long-lived Refresh Token (7 days)
-const generateRefreshToken = (payload) => jwt.sign(payload, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRY });
+export const generateRefreshToken = (payload) => jwt.sign(payload, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRY });
 
 // Verify Refresh Token
-const verifyRefreshToken = (token) => jwt.verify(token, REFRESH_SECRET);
+export const verifyRefreshToken = (token) => jwt.verify(token, REFRESH_SECRET);
 
 // Strictly authenticate token middleware
-const authenticate = (req, res, next) => {
+export const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ 
@@ -42,7 +42,7 @@ const authenticate = (req, res, next) => {
 };
 
 // Optional / Flexible authenticate middleware
-const optionalAuthenticate = (req, res, next) => {
+export const optionalAuthenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.split(' ')[1];
@@ -57,7 +57,7 @@ const optionalAuthenticate = (req, res, next) => {
 };
 
 // Role-based authorization middleware
-const authorize = (roles = []) => {
+export const authorize = (roles = []) => {
   const allowedRoles = typeof roles === 'string' ? [roles] : roles;
 
   return (req, res, next) => {
@@ -71,13 +71,7 @@ const authorize = (roles = []) => {
   };
 };
 
-module.exports = {
-  authenticate,
-  optionalAuthenticate,
-  authorize,
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
+export {
   ACCESS_SECRET,
   REFRESH_SECRET,
   ACCESS_EXPIRY,

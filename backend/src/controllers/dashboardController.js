@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // GET /api/dashboard/admin
 const getAdminDashboard = async (req, res) => {
@@ -179,7 +179,16 @@ const getAttendanceSummary = async (req, res) => {
 // Legacy alias
 const getDashboardStats = getAdminDashboard;
 
-module.exports = {
+export {
+  getAdminDashboard,
+  getHrDashboard,
+  getEmployeeDashboard,
+  getPayrollSummary,
+  getAttendanceSummary,
+  getDashboardStats
+};
+
+export default {
   getAdminDashboard,
   getHrDashboard,
   getEmployeeDashboard,

@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // GET /api/roles
 const getRoles = async (req, res) => {
@@ -108,7 +108,16 @@ const updateUserRole = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  getRoles,
+  createRole,
+  updateRole,
+  deleteRole,
+  getPermissions,
+  updateUserRole
+};
+
+export default {
   getRoles,
   createRole,
   updateRole,

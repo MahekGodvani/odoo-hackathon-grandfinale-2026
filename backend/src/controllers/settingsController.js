@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // GET /api/settings
 const getSettings = async (req, res) => {
@@ -76,7 +76,14 @@ const updateCompanySettings = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  getSettings,
+  updateSettings,
+  getCompanySettings,
+  updateCompanySettings
+};
+
+export default {
   getSettings,
   updateSettings,
   getCompanySettings,

@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // -------------------------------------------------------------
 // BANK ACCOUNTS
@@ -164,7 +164,16 @@ const getPaymentById = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  createBankAccount,
+  getBankAccountsByEmployee,
+  updateBankAccount,
+  recordPayment,
+  getPayments,
+  getPaymentById
+};
+
+export default {
   createBankAccount,
   getBankAccountsByEmployee,
   updateBankAccount,

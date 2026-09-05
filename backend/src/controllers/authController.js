@@ -1,15 +1,15 @@
-const db = require('../config/db');
-const crypto = require('crypto');
-const { 
+import db from '../config/db.js';
+import crypto from 'crypto';
+import { 
   generateAccessToken, 
   generateRefreshToken, 
   verifyRefreshToken 
-} = require('../middlewares/auth');
+} from '../middlewares/auth.js';
 
 // -------------------------------------------------------------
 // 1. REGISTER
 // -------------------------------------------------------------
-const register = async (req, res) => {
+export const register = async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
@@ -87,7 +87,7 @@ const register = async (req, res) => {
 // -------------------------------------------------------------
 // 2. LOGIN (Issues 15-min Access Token + 7-day Refresh Token)
 // -------------------------------------------------------------
-const login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -165,7 +165,7 @@ const login = async (req, res) => {
 // -------------------------------------------------------------
 // 3. REFRESH TOKEN
 // -------------------------------------------------------------
-const refreshToken = async (req, res) => {
+export const refreshToken = async (req, res) => {
   try {
     const { refreshToken: incomingToken } = req.body;
     if (!incomingToken) {
@@ -242,7 +242,7 @@ const refreshToken = async (req, res) => {
 // -------------------------------------------------------------
 // 4. LOGOUT
 // -------------------------------------------------------------
-const logout = async (req, res) => {
+export const logout = async (req, res) => {
   try {
     const userId = req.user?.id ?? null;
     const { refreshToken: incomingToken } = req.body;
@@ -272,7 +272,7 @@ const logout = async (req, res) => {
 // -------------------------------------------------------------
 // 5. FORGOT PASSWORD
 // -------------------------------------------------------------
-const forgotPassword = async (req, res) => {
+export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -314,7 +314,7 @@ const forgotPassword = async (req, res) => {
 // -------------------------------------------------------------
 // 6. RESET PASSWORD
 // -------------------------------------------------------------
-const resetPassword = async (req, res) => {
+export const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
     if (!token || !newPassword) {
@@ -358,7 +358,7 @@ const resetPassword = async (req, res) => {
 // -------------------------------------------------------------
 // 7. GET PROFILE
 // -------------------------------------------------------------
-const getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
     const [users] = await db.query(
       `SELECT u.id, u.company_id, u.email, u.role, u.is_active, u.created_at,
@@ -386,7 +386,7 @@ const getProfile = async (req, res) => {
 // -------------------------------------------------------------
 // 8. EDIT PROFILE
 // -------------------------------------------------------------
-const updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
@@ -446,7 +446,7 @@ const updateProfile = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   register,
   login,
   refreshToken,

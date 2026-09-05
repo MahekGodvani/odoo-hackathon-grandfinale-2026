@@ -1,4 +1,4 @@
-const swaggerUi = require('swagger-ui-express');
+import swaggerUi from 'swagger-ui-express';
 
 const swaggerDocument = {
   openapi: '3.0.0',
@@ -1054,4 +1054,5 @@ const setupSwagger = (app) => {
   app.get('/api-docs.json', (req, res) => res.json(swaggerDocument));
 };
 
-module.exports = { setupSwagger, swaggerDocument };
+export { setupSwagger, swaggerDocument };
+export default setupSwagger;

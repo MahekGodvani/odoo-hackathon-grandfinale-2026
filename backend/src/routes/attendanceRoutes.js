@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import attendanceController from '../controllers/attendanceController.js';
+import { authenticate, authorize } from '../middlewares/auth.js';
+
 const router = express.Router();
-const attendanceController = require('../controllers/attendanceController');
-const { authenticate, authorize } = require('../middlewares/auth');
 
 router.post('/check-in', authenticate, attendanceController.checkIn);
 router.post('/check-out', authenticate, attendanceController.checkOut);
@@ -14,4 +15,4 @@ router.get('/:employeeId/monthly', authenticate, attendanceController.getMonthly
 router.put('/:id', authenticate, authorize(['admin', 'hr']), attendanceController.updateAttendance);
 router.delete('/:id', authenticate, authorize(['admin', 'hr']), attendanceController.deleteAttendance);
 
-module.exports = router;
+export default router;

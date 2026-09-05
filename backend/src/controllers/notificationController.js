@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // GET /api/notifications
 const getNotifications = async (req, res) => {
@@ -63,7 +63,13 @@ const sendNotification = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  getNotifications,
+  markNotificationRead,
+  sendNotification
+};
+
+export default {
   getNotifications,
   markNotificationRead,
   sendNotification

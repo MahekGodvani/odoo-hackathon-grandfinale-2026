@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // Get active contract for an employee
 const getContractByEmployee = async (req, res) => {
@@ -76,7 +76,12 @@ const assignContract = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  getContractByEmployee,
+  assignContract
+};
+
+export default {
   getContractByEmployee,
   assignContract
 };

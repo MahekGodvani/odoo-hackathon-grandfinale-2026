@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import bankPaymentController from '../controllers/bankPaymentController.js';
+import { authenticate, authorize } from '../middlewares/auth.js';
+
 const router = express.Router();
-const bankPaymentController = require('../controllers/bankPaymentController');
-const { authenticate, authorize } = require('../middlewares/auth');
 
 // Bank Accounts
 router.post('/bank-accounts', authenticate, bankPaymentController.createBankAccount);
@@ -13,4 +14,4 @@ router.post('/payments', authenticate, authorize(['admin', 'payroll']), bankPaym
 router.get('/payments', authenticate, authorize(['admin', 'payroll', 'hr']), bankPaymentController.getPayments);
 router.get('/payments/:id', authenticate, bankPaymentController.getPaymentById);
 
-module.exports = router;
+export default router;

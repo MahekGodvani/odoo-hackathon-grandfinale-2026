@@ -1,4 +1,4 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // GET /api/payslips
 const getPayslips = async (req, res) => {
@@ -189,7 +189,15 @@ const sendPayslip = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
+  getPayslips,
+  getPayslipById,
+  getEmployeePayslips,
+  downloadPayslip,
+  sendPayslip
+};
+
+export default {
   getPayslips,
   getPayslipById,
   getEmployeePayslips,

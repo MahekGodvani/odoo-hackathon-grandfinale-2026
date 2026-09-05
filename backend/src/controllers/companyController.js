@@ -1,7 +1,7 @@
-const db = require('../config/db');
+import db from '../config/db.js';
 
 // GET /api/companies
-const getCompanies = async (req, res) => {
+export const getCompanies = async (req, res) => {
   try {
     const [companies] = await db.query(
       `SELECT c.*, 
@@ -17,7 +17,7 @@ const getCompanies = async (req, res) => {
 };
 
 // GET /api/companies/:id
-const getCompanyById = async (req, res) => {
+export const getCompanyById = async (req, res) => {
   try {
     const { id } = req.params;
     const [companies] = await db.query(`SELECT * FROM companies WHERE id = ?`, [id]);
@@ -32,7 +32,7 @@ const getCompanyById = async (req, res) => {
 };
 
 // POST /api/companies
-const createCompany = async (req, res) => {
+export const createCompany = async (req, res) => {
   try {
     const { name, email, phone, address, website, tax_id, currency = 'USD' } = req.body;
     if (!name || !email) {
@@ -57,7 +57,7 @@ const createCompany = async (req, res) => {
 };
 
 // PUT /api/companies/:id
-const updateCompany = async (req, res) => {
+export const updateCompany = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, phone, address, website, tax_id, currency } = req.body;
@@ -87,7 +87,7 @@ const updateCompany = async (req, res) => {
 };
 
 // DELETE /api/companies/:id
-const deleteCompany = async (req, res) => {
+export const deleteCompany = async (req, res) => {
   try {
     const { id } = req.params;
     const [result] = await db.query(`DELETE FROM companies WHERE id = ?`, [id]);
@@ -101,7 +101,7 @@ const deleteCompany = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   getCompanies,
   getCompanyById,
   createCompany,
