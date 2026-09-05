@@ -57,7 +57,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       title: 'INTELLIGENCE & COMMERCIAL',
       items: [
         { name: 'Payroll Analytics', path: '/reports', icon: BarChart3, roles: [ROLES.HR_MANAGER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN], badge: 'Live' },
-        { name: 'Business Model & ROI', path: '/business-model', icon: TrendingUp, roles: [], badge: '⭐ Strategy' },
+        { name: 'Business Model', path: '/business-model', icon: TrendingUp, roles: [], badge: 'ROI' },
       ]
     },
     {
@@ -129,14 +129,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                         }`
                       }
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-3 min-w-0">
                         <item.icon className="w-4 h-4 shrink-0" />
-                        <span>{item.name}</span>
+                        <span className="truncate whitespace-nowrap">{item.name}</span>
                       </div>
                       {item.badge && (
                         <span
-                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                            item.badge.includes('⭐')
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2 whitespace-nowrap ${
+                            item.badge === 'ROI'
                               ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
                               : 'bg-slate-800 text-slate-400 border border-slate-700/60'
                           }`}
