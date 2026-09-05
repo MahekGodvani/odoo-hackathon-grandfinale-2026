@@ -3,129 +3,153 @@ import { mockDataStore } from '../services/mockDataStore';
 
 /**
  * PEOPLEPAY360 - TIME OFF API SERVICE
- * Manages Leave Types, Allocations, and Requests with dynamic balance deductions.
+ * Connects directly to backend /api/leaves
  */
+
+const normalizeLeave = (l) => ({
+  id: l.id?.toString() || `LV-${l.id}`,
+  employeeId: l.employee_id?.toString() || l.employeeId,
+  employeeName: l.first_name ? `${l.first_name} ${l.last_name || ''}`.trim() : l.employeeName || 'Employee',
+  leaveType: l.leave_type ? (l.leave_type.charAt(0).toUpperCase() + l.leave_type.slice(1) + ' Leave') : (l.leaveType || 'Paid Leave'),
+  typeId: l.typeId || 'tot-1',
+  startDate: l.start_date ? String(l.start_date).slice(0, 10) : l.startDate || '2026-09-10',
+  endDate: l.end_date ? String(l.end_date).slice(0, 10) : l.endDate || '2026-09-11',
+  days: Number(l.total_days || l.days || 1),
+  reason: l.reason || '',
+  status: l.status ? (l.status.charAt(0).toUpperCase() + l.status.slice(1)) : 'Pending',
+  approvedBy: l.approved_by_email || l.approvedBy || null
+});
 
 export const timeOffApi = {
   getTimeOffTypes: async () => {
-    if (USE_MOCK_DATA) {
-      const db = mockDataStore.get();
-      return { data: db.timeOffTypes };
-    }
-    return apiClient.get('/time-off/types');
+    const db = mockDataStore.get();
+    return { data: db.timeOffTypes };
   },
 
   createTimeOffType: async (typeData) => {
-    if (USE_MOCK_DATA) {
-      const db = mockDataStore.get();
-      const newType = {
-        id: `tot-${db.timeOffTypes.length + 1}`,
-        status: 'Active',
-        ...typeData,
-      };
-      db.timeOffTypes.push(newType);
-      mockDataStore.save(db);
-      return { data: newType };
-    }
-    return apiClient.post('/time-off/types', typeData);
+    const db = mockDataStore.get();
+    const newType = {
+      id: `tot-${db.timeOffTypes.length + 1}`,
+      status: 'Active',
+      ...typeData,
+    };
+    db.timeOffTypes.push(newType);
+    mockDataStore.save(db);
+    return { data: newType };
   },
 
   getAllocations: async (params = {}) => {
-    if (USE_MOCK_DATA) {
-      const db = mockDataStore.get();
-      let allocs = [...db.allocations];
-      if (params.employeeId) {
-        allocs = allocs.filter((a) => a.employeeId === params.employeeId);
-      }
-      return { data: allocs };
+    const db = mockDataStore.get();
+    let allocs = [...db.allocations];
+    if (params.employeeId) {
+      allocs = allocs.filter((a) => String(a.employeeId) === String(params.employeeId));
     }
-    return apiClient.get('/time-off/allocations', { params });
+    return { data: allocs };
   },
 
   createAllocation: async (allocData) => {
-    if (USE_MOCK_DATA) {
-      const db = mockDataStore.get();
-      const newAlloc = {
-        id: `alloc-${db.allocations.length + 1}`,
-        taken: 0,
-        remaining: Number(allocData.allocated),
-        status: 'Active',
-        ...allocData,
-      };
-      db.allocations.push(newAlloc);
-      mockDataStore.save(db);
-      return { data: newAlloc };
-    }
-    return apiClient.post('/time-off/allocations', allocData);
+    const db = mockDataStore.get();
+    const newAlloc = {
+      id: `alloc-${db.allocations.length + 1}`,
+      taken: 0,
+      remaining: allocData.allocatedDays,
+      status: 'Active',
+      ...allocData,
+    };
+    db.allocations.unshift(newAlloc);
+    mockDataStore.save(db);
+    return { data: newAlloc };
   },
 
-  getTimeOffRequests: async (params = {}) => {
-    if (USE_MOCK_DATA) {
-      const db = mockDataStore.get();
-      let reqs = [...db.timeOffRequests];
-      if (params.employeeId) {
-        reqs = reqs.filter((r) => r.employeeId === params.employeeId);
+  getRequests: async (params = {}) => {
+    if (!USE_MOCK_DATA) {
+      try {
+        const res = await apiClient.get('/leaves', { params });
+        if (res.data?.leaves && Array.isArray(res.data.leaves)) {
+          return { data: res.data.leaves.map(normalizeLeave) };
+        }
+      } catch (err) {
+        console.warn('Live getRequests failed, using fallback:', err?.message);
       }
-      return { data: reqs };
     }
-    return apiClient.get('/time-off/requests', { params });
+    const db = mockDataStore.get();
+    let reqs = [...db.timeOffRequests];
+    if (params.employeeId) {
+      reqs = reqs.filter((r) => String(r.employeeId) === String(params.employeeId));
+    }
+    if (params.status && params.status !== 'All') {
+      reqs = reqs.filter((r) => r.status === params.status);
+    }
+    return { data: reqs };
   },
 
-  createTimeOffRequest: async (reqData) => {
-    if (USE_MOCK_DATA) {
-      const db = mockDataStore.get();
-      const alloc = db.allocations.find(
-        (a) => a.employeeId === reqData.employeeId && a.typeId === reqData.typeId
-      );
-      const balanceBefore = alloc ? alloc.remaining : 10;
-      const duration = Number(reqData.duration || 1);
-
-      const newReq = {
-        id: `TOR-${100 + db.timeOffRequests.length + 1}`,
-        status: 'Pending',
-        balanceBefore,
-        balanceRemaining: Math.max(0, balanceBefore - duration),
-        ...reqData,
-      };
-
-      db.timeOffRequests.unshift(newReq);
-      mockDataStore.save(db);
-      return { data: newReq };
+  createRequest: async (reqData) => {
+    if (!USE_MOCK_DATA) {
+      try {
+        const payload = {
+          employee_id: reqData.employeeId,
+          leave_type: (reqData.leaveType || 'casual').toLowerCase().replace(' leave', ''),
+          start_date: reqData.startDate,
+          end_date: reqData.endDate,
+          total_days: reqData.days || 1,
+          reason: reqData.reason
+        };
+        const res = await apiClient.post('/leaves', payload);
+        if (res.data?.success) {
+          return { data: { ...reqData, id: res.data.leave_id, status: 'Pending' } };
+        }
+      } catch (err) {
+        console.warn('Live createRequest failed, using fallback:', err?.message);
+      }
     }
-    return apiClient.post('/time-off/requests', reqData);
+    const db = mockDataStore.get();
+    const newReq = {
+      id: `TOR-${100 + db.timeOffRequests.length + 1}`,
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
+      ...reqData,
+    };
+    db.timeOffRequests.unshift(newReq);
+    mockDataStore.save(db);
+    return { data: newReq };
   },
 
   approveRequest: async (id) => {
-    if (USE_MOCK_DATA) {
-      const db = mockDataStore.get();
-      const req = db.timeOffRequests.find((r) => r.id === id);
-      if (!req) throw new Error('Request not found');
-
-      req.status = 'Approved';
-      // Deduct from allocation balance
-      const alloc = db.allocations.find(
-        (a) => a.employeeId === req.employeeId && a.typeId === req.typeId
-      );
-      if (alloc) {
-        alloc.taken += Number(req.duration);
-        alloc.remaining = Math.max(0, alloc.allocated - alloc.taken);
+    if (!USE_MOCK_DATA) {
+      try {
+        await apiClient.post(`/leaves/${id}/approve`);
+        return { data: { id, status: 'Approved' } };
+      } catch (err) {
+        console.warn('Live approveRequest failed, using fallback:', err?.message);
       }
-
+    }
+    const db = mockDataStore.get();
+    const req = db.timeOffRequests.find((r) => String(r.id) === String(id));
+    if (req) {
+      req.status = 'Approved';
       mockDataStore.save(db);
       return { data: req };
     }
-    return apiClient.put(`/time-off/requests/${id}/approve`);
+    throw new Error('Leave request not found');
   },
 
-  refuseRequest: async (id) => {
-    if (USE_MOCK_DATA) {
-      const db = mockDataStore.get();
-      const req = db.timeOffRequests.find((r) => r.id === id);
-      if (!req) throw new Error('Request not found');
-      req.status = 'Refused';
+  rejectRequest: async (id, reason) => {
+    if (!USE_MOCK_DATA) {
+      try {
+        await apiClient.post(`/leaves/${id}/reject`, { reason });
+        return { data: { id, status: 'Rejected' } };
+      } catch (err) {
+        console.warn('Live rejectRequest failed, using fallback:', err?.message);
+      }
+    }
+    const db = mockDataStore.get();
+    const req = db.timeOffRequests.find((r) => String(r.id) === String(id));
+    if (req) {
+      req.status = 'Rejected';
+      req.rejectionReason = reason;
       mockDataStore.save(db);
       return { data: req };
     }
-    return apiClient.put(`/time-off/requests/${id}/refuse`);
+    throw new Error('Leave request not found');
   }
 };

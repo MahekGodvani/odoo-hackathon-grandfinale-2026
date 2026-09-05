@@ -2,15 +2,12 @@ import axios from 'axios';
 
 /**
  * PEOPLEPAY360 - CENTRALIZED AXIOS INSTANCE
- * 
- * For HTML/JS Developers:
- * Axios is an HTTP client library (like a supercharged `fetch()`).
- * This file creates a configured instance with base URL, timeout, and authorization headers.
- * When the backend is ready, set `VITE_USE_MOCK=false` in `.env` to hit real REST endpoints!
+ * Configured with base URL, timeout, and JWT authorization headers.
+ * Connects directly to Node.js / Express backend at http://localhost:5000/api
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-export const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK !== 'false'; // default to true for hackathon
+export const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK === 'true';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -32,11 +29,11 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor for clean data extraction & global error handling
+// Response Interceptor for clean data extraction & error handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error Response:', error?.response?.data || error.message);
+    console.warn('API Error Response:', error?.response?.data || error.message);
     return Promise.reject(error);
   }
 );
