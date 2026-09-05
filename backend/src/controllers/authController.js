@@ -7,7 +7,85 @@ const {
 } = require('../middlewares/auth');
 
 // -------------------------------------------------------------
-// 1. LOGIN (Issues 15-min Access Token + 7-day Refresh Token)
+// 1. REGISTER
+// -------------------------------------------------------------
+const register = async (req, res) => {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const { email, password, role = 'employee', company_id = 1, first_name, last_name, employee_code, department, designation } = req.body;
+
+    if (!email || !password) {
+      await conn.rollback();
+      return res.status(400).json({ success: false, message: 'Email and password are required.' });
+    }
+
+    const [existing] = await conn.query(`SELECT id FROM users WHERE email = ?`, [email]);
+    if (existing.length > 0) {
+      await conn.rollback();
+      return res.status(400).json({ success: false, message: 'Email already registered.' });
+    }
+
+    const [userResult] = await conn.query(
+      `INSERT INTO users (company_id, email, password_hash, role) VALUES (?, ?, ?, ?)`,
+      [company_id, email, `hash_${password}`, role]
+    );
+    const userId = userResult.insertId;
+
+    let employeeId = null;
+    if (first_name && last_name) {
+      const code = employee_code ?? `EMP-${Date.now().toString().slice(-4)}`;
+      const [empResult] = await conn.query(
+        `INSERT INTO employees (company_id, user_id, employee_code, first_name, last_name, email, department, designation, joining_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURDATE())`,
+        [company_id, userId, code, first_name, last_name, email, department ?? 'General', designation ?? 'Staff']
+      );
+      employeeId = empResult.insertId;
+    }
+
+    const tokenPayload = {
+      id: userId,
+      email,
+      role,
+      employee_id: employeeId,
+      first_name: first_name ?? '',
+      last_name: last_name ?? ''
+    };
+
+    const accessToken = generateAccessToken(tokenPayload);
+    const refreshToken = generateRefreshToken({ id: userId, email });
+
+    await conn.query(`UPDATE users SET refresh_token = ? WHERE id = ?`, [refreshToken, userId]);
+    await conn.commit();
+
+    return res.status(201).json({
+      success: true,
+      message: 'User registered successfully.',
+      tokens: {
+        accessToken,
+        refreshToken,
+        tokenType: 'Bearer',
+        expiresIn: 900
+      },
+      user: {
+        id: userId,
+        email,
+        role,
+        employee_id: employeeId
+      }
+    });
+  } catch (error) {
+    await conn.rollback();
+    console.error('Register error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  } finally {
+    conn.release();
+  }
+};
+
+// -------------------------------------------------------------
+// 2. LOGIN (Issues 15-min Access Token + 7-day Refresh Token)
 // -------------------------------------------------------------
 const login = async (req, res) => {
   try {
@@ -34,7 +112,6 @@ const login = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Account is deactivated.' });
     }
 
-    // Password comparison
     const passwordMatch = user.password_hash === password || 
                           user.password_hash === `hash_${password}` || 
                           password === '123456';
@@ -86,7 +163,7 @@ const login = async (req, res) => {
 };
 
 // -------------------------------------------------------------
-// 2. REFRESH TOKEN (Invoked after 15 minutes to obtain new Access Token)
+// 3. REFRESH TOKEN
 // -------------------------------------------------------------
 const refreshToken = async (req, res) => {
   try {
@@ -144,9 +221,7 @@ const refreshToken = async (req, res) => {
 
     try {
       await db.query(`UPDATE users SET refresh_token = ? WHERE id = ?`, [newRefreshToken, user.id]);
-    } catch {
-      // fallback
-    }
+    } catch {}
 
     return res.json({
       success: true,
@@ -165,7 +240,7 @@ const refreshToken = async (req, res) => {
 };
 
 // -------------------------------------------------------------
-// 3. LOGOUT (Invalidates Refresh Token in DB)
+// 4. LOGOUT
 // -------------------------------------------------------------
 const logout = async (req, res) => {
   try {
@@ -195,7 +270,7 @@ const logout = async (req, res) => {
 };
 
 // -------------------------------------------------------------
-// 4. FORGOT PASSWORD
+// 5. FORGOT PASSWORD
 // -------------------------------------------------------------
 const forgotPassword = async (req, res) => {
   try {
@@ -237,7 +312,7 @@ const forgotPassword = async (req, res) => {
 };
 
 // -------------------------------------------------------------
-// 5. RESET PASSWORD
+// 6. RESET PASSWORD
 // -------------------------------------------------------------
 const resetPassword = async (req, res) => {
   try {
@@ -281,17 +356,18 @@ const resetPassword = async (req, res) => {
 };
 
 // -------------------------------------------------------------
-// 6. GET PROFILE
+// 7. GET PROFILE
 // -------------------------------------------------------------
 const getProfile = async (req, res) => {
   try {
     const [users] = await db.query(
-      `SELECT u.id, u.email, u.role, u.is_active, u.created_at,
+      `SELECT u.id, u.company_id, u.email, u.role, u.is_active, u.created_at,
               e.id AS employee_id, e.employee_code, e.first_name, e.last_name, 
               e.phone, e.department, e.designation, e.joining_date, e.status,
-              e.bank_name, e.bank_account_no, e.bank_ifsc_code
+              c.name AS company_name
        FROM users u
        LEFT JOIN employees e ON e.user_id = u.id
+       LEFT JOIN companies c ON c.id = u.company_id
        WHERE u.id = ?`,
       [req.user.id]
     );
@@ -308,7 +384,7 @@ const getProfile = async (req, res) => {
 };
 
 // -------------------------------------------------------------
-// 7. EDIT PROFILE
+// 8. EDIT PROFILE
 // -------------------------------------------------------------
 const updateProfile = async (req, res) => {
   const conn = await db.getConnection();
@@ -320,9 +396,6 @@ const updateProfile = async (req, res) => {
       first_name, 
       last_name, 
       phone, 
-      bank_name, 
-      bank_account_no, 
-      bank_ifsc_code,
       currentPassword, 
       newPassword 
     } = req.body;
@@ -347,17 +420,14 @@ const updateProfile = async (req, res) => {
       }
     }
 
-    if (req.user.employee_id || first_name || last_name || phone || bank_name || bank_account_no || bank_ifsc_code) {
+    if (req.user.employee_id || first_name || last_name || phone) {
       await conn.query(
         `UPDATE employees 
          SET first_name = COALESCE(?, first_name),
              last_name = COALESCE(?, last_name),
-             phone = COALESCE(?, phone),
-             bank_name = COALESCE(?, bank_name),
-             bank_account_no = COALESCE(?, bank_account_no),
-             bank_ifsc_code = COALESCE(?, bank_ifsc_code)
+             phone = COALESCE(?, phone)
          WHERE user_id = ?`,
-        [first_name, last_name, phone, bank_name, bank_account_no, bank_ifsc_code, userId]
+        [first_name, last_name, phone, userId]
       );
     }
 
@@ -377,6 +447,7 @@ const updateProfile = async (req, res) => {
 };
 
 module.exports = {
+  register,
   login,
   refreshToken,
   logout,

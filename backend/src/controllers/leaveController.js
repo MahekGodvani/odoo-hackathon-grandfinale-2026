@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// List leave requests (all for HR/Admin, or filtered by employee)
+// GET /api/leaves
 const getLeaveRequests = async (req, res) => {
   try {
     const { employee_id, status } = req.query;
@@ -16,7 +16,6 @@ const getLeaveRequests = async (req, res) => {
     `;
     const params = [];
 
-    // If regular employee, only show their own leaves
     if (req.user?.role === 'employee' && req.user?.employee_id) {
       query += ` AND lr.employee_id = ?`;
       params.push(req.user.employee_id);
@@ -40,7 +39,30 @@ const getLeaveRequests = async (req, res) => {
   }
 };
 
-// Step 4: Submit Leave Request
+// GET /api/leaves/:id
+const getLeaveById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.query(
+      `SELECT lr.*, e.first_name, e.last_name, e.employee_code, e.department
+       FROM leave_requests lr
+       JOIN employees e ON e.id = lr.employee_id
+       WHERE lr.id = ?`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Leave request not found.' });
+    }
+
+    return res.json({ success: true, leave: rows[0] });
+  } catch (error) {
+    console.error('getLeaveById error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/leaves
 const submitLeaveRequest = async (req, res) => {
   try {
     const { employee_id, leave_type = 'casual', start_date, end_date, total_days = 1, reason } = req.body;
@@ -67,36 +89,103 @@ const submitLeaveRequest = async (req, res) => {
   }
 };
 
-// Step 5: HR Approves or Rejects Leave
-const updateLeaveStatus = async (req, res) => {
+// PUT /api/leaves/:id
+const updateLeave = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
-
-    if (!['approved', 'rejected', 'pending'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Status must be approved, rejected, or pending.' });
-    }
+    const { leave_type, start_date, end_date, total_days, reason } = req.body;
 
     const [result] = await db.query(
       `UPDATE leave_requests 
-       SET status = ?, approved_by_user_id = ?
+       SET leave_type = COALESCE(?, leave_type),
+           start_date = COALESCE(?, start_date),
+           end_date = COALESCE(?, end_date),
+           total_days = COALESCE(?, total_days),
+           reason = COALESCE(?, reason)
+       WHERE id = ? AND status = 'pending'`,
+      [leave_type, start_date, end_date, total_days, reason, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ success: false, message: 'Leave not found or cannot be edited once reviewed.' });
+    }
+
+    return res.json({ success: true, message: 'Leave request updated successfully.' });
+  } catch (error) {
+    console.error('updateLeave error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/leaves/:id/approve
+const approveLeave = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id ?? null;
+
+    const [result] = await db.query(
+      `UPDATE leave_requests 
+       SET status = 'approved', approved_by_user_id = ?
        WHERE id = ?`,
-      [status, req.user.id, id]
+      [userId, id]
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Leave request not found.' });
     }
 
-    return res.json({ success: true, message: `Leave request status updated to ${status}.` });
+    return res.json({ success: true, message: 'Leave request approved successfully.' });
   } catch (error) {
-    console.error('updateLeaveStatus error:', error);
+    console.error('approveLeave error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/leaves/:id/reject
+const rejectLeave = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id ?? null;
+
+    const [result] = await db.query(
+      `UPDATE leave_requests 
+       SET status = 'rejected', approved_by_user_id = ?
+       WHERE id = ?`,
+      [userId, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Leave request not found.' });
+    }
+
+    return res.json({ success: true, message: 'Leave request rejected.' });
+  } catch (error) {
+    console.error('rejectLeave error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /api/leaves/:id
+const deleteLeave = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await db.query(`DELETE FROM leave_requests WHERE id = ?`, [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Leave request not found.' });
+    }
+    return res.json({ success: true, message: 'Leave request deleted successfully.' });
+  } catch (error) {
+    console.error('deleteLeave error:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 module.exports = {
   getLeaveRequests,
+  getLeaveById,
   submitLeaveRequest,
-  updateLeaveStatus
+  updateLeave,
+  approveLeave,
+  rejectLeave,
+  deleteLeave
 };

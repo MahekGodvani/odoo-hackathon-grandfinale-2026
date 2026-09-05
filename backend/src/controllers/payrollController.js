@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// List all payroll cycles
+// GET /api/payroll
 const getPayrolls = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -18,7 +18,62 @@ const getPayrolls = async (req, res) => {
   }
 };
 
-// Step 6, 7 & 8: Generate Payroll Run with Automatic Salary Calculation
+// GET /api/payroll/:id
+const getPayrollById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [payrolls] = await db.query(
+      `SELECT p.*, u.email AS approved_by_email 
+       FROM payrolls p 
+       LEFT JOIN users u ON u.id = p.approved_by_user_id 
+       WHERE p.id = ?`,
+      [id]
+    );
+
+    if (payrolls.length === 0) {
+      return res.status(404).json({ success: false, message: 'Payroll run not found.' });
+    }
+
+    const [payslips] = await db.query(
+      `SELECT ps.*, e.first_name, e.last_name, e.employee_code, e.department
+       FROM payslips ps
+       JOIN employees e ON e.id = ps.employee_id
+       WHERE ps.payroll_id = ?`,
+      [id]
+    );
+
+    return res.json({
+      success: true,
+      payroll: payrolls[0],
+      payslips
+    });
+  } catch (error) {
+    console.error('getPayrollById error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/payroll/employee/:employeeId
+const getEmployeePayroll = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const [payslips] = await db.query(
+      `SELECT ps.*, p.period_month, p.period_year, p.status AS payroll_status, p.paid_at
+       FROM payslips ps
+       JOIN payrolls p ON p.id = ps.payroll_id
+       WHERE ps.employee_id = ?
+       ORDER BY p.period_year DESC, p.period_month DESC`,
+      [employeeId]
+    );
+
+    return res.json({ success: true, count: payslips.length, payrolls: payslips });
+  } catch (error) {
+    console.error('getEmployeePayroll error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/payroll/generate
 const generatePayroll = async (req, res) => {
   const conn = await db.getConnection();
   try {
@@ -33,7 +88,6 @@ const generatePayroll = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Valid period_month (1-12) and period_year required.' });
     }
 
-    // 1. Create or get existing draft payroll
     let payrollId;
     const [existing] = await conn.query(
       `SELECT id, status FROM payrolls WHERE period_month = ? AND period_year = ?`,
@@ -46,7 +100,6 @@ const generatePayroll = async (req, res) => {
         return res.status(400).json({ success: false, message: 'This payroll period is already finalized and paid.' });
       }
       payrollId = existing[0].id;
-      // Clear previous draft payslips to recalculate
       await conn.query(`DELETE FROM payslips WHERE payroll_id = ?`, [payrollId]);
     } else {
       const [insertPayroll] = await conn.query(
@@ -56,14 +109,13 @@ const generatePayroll = async (req, res) => {
       payrollId = insertPayroll.insertId;
     }
 
-    // 2. Fetch all active employees who have an active contract
     const [employees] = await conn.query(
       `SELECT e.id AS employee_id, e.first_name, e.last_name,
               c.id AS contract_id, c.base_salary, c.hra_allowance, 
               c.transport_allowance, c.other_allowance, c.tax_deduction_rate
        FROM employees e
        JOIN contracts c ON c.employee_id = e.id AND c.status = 'active'
-       WHERE e.status != 'inactive'`
+       WHERE e.status != 'inactive' AND e.status != 'terminated'`
     );
 
     if (employees.length === 0) {
@@ -79,7 +131,6 @@ const generatePayroll = async (req, res) => {
     let payslipsCreated = 0;
 
     for (const emp of employees) {
-      // 3. Attendance: Count present/half days
       const [attRows] = await conn.query(
         `SELECT COUNT(*) AS present_count 
          FROM attendance 
@@ -91,7 +142,6 @@ const generatePayroll = async (req, res) => {
       );
       const presentDays = attRows[0]?.present_count ?? workingDaysInMonth;
 
-      // 4. Leave Calculation: Count approved paid and unpaid leaves
       const [leaveRows] = await conn.query(
         `SELECT leave_type, SUM(total_days) AS total_leave_days
          FROM leave_requests 
@@ -113,7 +163,7 @@ const generatePayroll = async (req, res) => {
         }
       }
 
-      // 5. 🧮 Salary Calculation Engine
+      // Salary Calculation Formula
       const baseSalary = parseFloat(emp.base_salary) || 0;
       const hra = parseFloat(emp.hra_allowance) || 0;
       const transport = parseFloat(emp.transport_allowance) || 0;
@@ -128,7 +178,6 @@ const generatePayroll = async (req, res) => {
       const totalDeductions = parseFloat((unpaidDeductions + taxDeductions).toFixed(2));
       const netSalary = parseFloat((grossSalary - totalDeductions).toFixed(2));
 
-      // 6. 🧾 Insert Payslip
       await conn.query(
         `INSERT INTO payslips 
          (payroll_id, employee_id, contract_id, working_days, present_days, paid_leave_days, unpaid_leave_days, 
@@ -146,7 +195,6 @@ const generatePayroll = async (req, res) => {
       payslipsCreated++;
     }
 
-    // Update payroll totals
     await conn.query(
       `UPDATE payrolls 
        SET total_gross_pay = ?, total_deductions = ?, total_net_pay = ?
@@ -178,19 +226,40 @@ const generatePayroll = async (req, res) => {
   }
 };
 
-// Step 9: Approve Payroll
-const approvePayroll = async (req, res) => {
+// POST /api/payroll/:id/process
+const processPayroll = async (req, res) => {
   try {
     const { id } = req.params;
     const [result] = await db.query(
-      `UPDATE payrolls 
-       SET status = 'approved', approved_by_user_id = ?
-       WHERE id = ? AND status = 'draft'`,
-      [req.user.id, id]
+      `UPDATE payrolls SET status = 'processing' WHERE id = ? AND status = 'draft'`,
+      [id]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(400).json({ success: false, message: 'Payroll not found or is not in draft status.' });
+      return res.status(400).json({ success: false, message: 'Payroll not found or not in draft status.' });
+    }
+
+    return res.json({ success: true, message: 'Payroll run set to processing.' });
+  } catch (error) {
+    console.error('processPayroll error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/payroll/:id/approve
+const approvePayroll = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id ?? null;
+    const [result] = await db.query(
+      `UPDATE payrolls 
+       SET status = 'approved', approved_by_user_id = ?
+       WHERE id = ? AND (status = 'draft' OR status = 'processing')`,
+      [userId, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ success: false, message: 'Payroll not found or is already finalized.' });
     }
 
     return res.json({ success: true, message: 'Payroll cycle approved successfully.' });
@@ -200,7 +269,7 @@ const approvePayroll = async (req, res) => {
   }
 };
 
-// Step 10 & 11: Mark Salary as Paid & Disburse Payslips
+// PUT /api/payroll/:id/pay
 const markPayrollPaid = async (req, res) => {
   const conn = await db.getConnection();
   try {
@@ -244,7 +313,10 @@ const markPayrollPaid = async (req, res) => {
 
 module.exports = {
   getPayrolls,
+  getPayrollById,
+  getEmployeePayroll,
   generatePayroll,
+  processPayroll,
   approvePayroll,
   markPayrollPaid
 };

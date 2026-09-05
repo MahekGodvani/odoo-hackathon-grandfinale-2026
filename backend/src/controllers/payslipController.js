@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// List payslips (filterable by payroll_id, employee_id)
+// GET /api/payslips
 const getPayslips = async (req, res) => {
   try {
     const { payroll_id, employee_id } = req.query;
@@ -8,11 +8,12 @@ const getPayslips = async (req, res) => {
     let query = `
       SELECT ps.*, 
              e.first_name, e.last_name, e.employee_code, e.department, e.designation,
-             e.bank_name, e.bank_account_no, e.bank_ifsc_code,
+             b.bank_name, b.account_number AS bank_account_no, b.ifsc_code AS bank_ifsc_code,
              p.period_month, p.period_year, p.status AS payroll_status
       FROM payslips ps
       JOIN employees e ON e.id = ps.employee_id
       JOIN payrolls p ON p.id = ps.payroll_id
+      LEFT JOIN bank_accounts b ON b.employee_id = e.id AND b.is_primary = 1
       WHERE 1=1
     `;
     const params = [];
@@ -40,7 +41,7 @@ const getPayslips = async (req, res) => {
   }
 };
 
-// Get single payslip by ID
+// GET /api/payslips/:id
 const getPayslipById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -48,13 +49,16 @@ const getPayslipById = async (req, res) => {
       `SELECT ps.*, 
               e.first_name, e.last_name, e.employee_code, e.email AS employee_email,
               e.department, e.designation, e.joining_date,
-              e.bank_name, e.bank_account_no, e.bank_ifsc_code,
+              b.bank_name, b.account_number AS bank_account_no, b.ifsc_code AS bank_ifsc_code,
               c.contract_type,
-              p.period_month, p.period_year, p.status AS payroll_status, p.paid_at
+              p.period_month, p.period_year, p.status AS payroll_status, p.paid_at,
+              comp.name AS company_name, comp.currency
        FROM payslips ps
        JOIN employees e ON e.id = ps.employee_id
        JOIN contracts c ON c.id = ps.contract_id
        JOIN payrolls p ON p.id = ps.payroll_id
+       LEFT JOIN companies comp ON comp.id = e.company_id
+       LEFT JOIN bank_accounts b ON b.employee_id = e.id AND b.is_primary = 1
        WHERE ps.id = ?`,
       [id]
     );
@@ -76,7 +80,119 @@ const getPayslipById = async (req, res) => {
   }
 };
 
+// GET /api/payslips/employee/:employeeId
+const getEmployeePayslips = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+
+    if (req.user?.role === 'employee' && req.user?.employee_id !== parseInt(employeeId, 10)) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    const [rows] = await db.query(
+      `SELECT ps.*, p.period_month, p.period_year, p.status AS payroll_status, p.paid_at
+       FROM payslips ps
+       JOIN payrolls p ON p.id = ps.payroll_id
+       WHERE ps.employee_id = ?
+       ORDER BY p.period_year DESC, p.period_month DESC`,
+      [employeeId]
+    );
+
+    return res.json({ success: true, count: rows.length, payslips: rows });
+  } catch (error) {
+    console.error('getEmployeePayslips error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/payslips/:id/download (Structured PDF / JSON summary export)
+const downloadPayslip = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.query(
+      `SELECT ps.*, 
+              e.first_name, e.last_name, e.employee_code, e.email AS employee_email,
+              e.department, e.designation,
+              p.period_month, p.period_year, p.paid_at
+       FROM payslips ps
+       JOIN employees e ON e.id = ps.employee_id
+       JOIN payrolls p ON p.id = ps.payroll_id
+       WHERE ps.id = ?`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Payslip not found.' });
+    }
+
+    const [payslip] = rows;
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="payslip-${payslip.employee_code}-${payslip.period_month}-${payslip.period_year}.json"`);
+    return res.json({
+      title: 'Official Payslip Summary',
+      document_id: `PAY-${payslip.id}`,
+      employee: {
+        code: payslip.employee_code,
+        name: `${payslip.first_name} ${payslip.last_name}`,
+        department: payslip.department,
+        designation: payslip.designation
+      },
+      payroll_period: `${payslip.period_month}/${payslip.period_year}`,
+      earnings: {
+        base_salary: payslip.base_salary,
+        allowances: payslip.allowances_total,
+        gross_salary: payslip.gross_salary
+      },
+      deductions: {
+        tax: payslip.tax_deductions,
+        unpaid_leave_deductions: payslip.unpaid_deductions,
+        total_deductions: payslip.total_deductions
+      },
+      net_salary: payslip.net_salary,
+      payment_status: payslip.payment_status,
+      paid_at: payslip.paid_at
+    });
+  } catch (error) {
+    console.error('downloadPayslip error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// POST /api/payslips/:id/send
+const sendPayslip = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.query(
+      `SELECT ps.id, e.email, e.first_name, e.last_name, p.period_month, p.period_year 
+       FROM payslips ps 
+       JOIN employees e ON e.id = ps.employee_id 
+       JOIN payrolls p ON p.id = ps.payroll_id 
+       WHERE ps.id = ?`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Payslip not found.' });
+    }
+
+    const [item] = rows;
+    await db.query(`UPDATE payslips SET email_sent = 1 WHERE id = ?`, [id]);
+
+    return res.json({
+      success: true,
+      message: `Payslip for ${item.first_name} ${item.last_name} (${item.period_month}/${item.period_year}) has been emailed to ${item.email}.`
+    });
+  } catch (error) {
+    console.error('sendPayslip error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getPayslips,
-  getPayslipById
+  getPayslipById,
+  getEmployeePayslips,
+  downloadPayslip,
+  sendPayslip
 };
