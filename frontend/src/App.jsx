@@ -1,9 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, ROLES } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RoleProtectedRoute from './components/auth/RoleProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -25,6 +26,8 @@ import PayslipDetailPage from './pages/payroll/PayslipDetailPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import UsersPage from './pages/users/UsersPage';
 import BusinessModelPage from './pages/business/BusinessModelPage';
+import BusinessFlowPage from './pages/business/BusinessFlowPage';
+import B2BPortalPage from './pages/business/B2BPortalPage';
 import LandingPage from './pages/landing/LandingPage';
 
 /**
@@ -45,40 +48,128 @@ function App() {
           <Route
             element={
               <ProtectedRoute>
-                <MainLayout />
+                <ErrorBoundary>
+                  <MainLayout />
+                </ErrorBoundary>
               </ProtectedRoute>
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
 
             {/* Employee Operational Hub Routes */}
-            <Route path="/employees" element={<EmployeesPage />} />
-            <Route path="/employees/:id" element={<EmployeeDetailPage />} />
+            <Route
+              path="/employees"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_MANAGER]}>
+                  <EmployeesPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/employees/:id"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_MANAGER]}>
+                  <EmployeeDetailPage />
+                </RoleProtectedRoute>
+              }
+            />
 
             {/* HR Core Modules */}
-            <Route path="/contracts" element={<ContractsPage />} />
-            <Route path="/schedules" element={<SchedulesPage />} />
+            <Route
+              path="/contracts"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_MANAGER]}>
+                  <ContractsPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/schedules"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_MANAGER]}>
+                  <SchedulesPage />
+                </RoleProtectedRoute>
+              }
+            />
             <Route path="/attendance" element={<AttendancePage />} />
 
             {/* Time Off Management */}
             <Route path="/time-off/requests" element={<TimeOffRequestsPage />} />
-            <Route path="/time-off/allocations" element={<TimeOffAllocationsPage />} />
-            <Route path="/time-off/types" element={<TimeOffTypesPage />} />
+            <Route
+              path="/time-off/allocations"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_MANAGER]}>
+                  <TimeOffAllocationsPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/time-off/types"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_MANAGER]}>
+                  <TimeOffTypesPage />
+                </RoleProtectedRoute>
+              }
+            />
 
             {/* Payroll Hero Workflows */}
-            <Route path="/payroll/payruns" element={<PayrunsPage />} />
-            <Route path="/payroll/payruns/:id" element={<PayrunDetailPage />} />
+            <Route
+              path="/payroll/payruns"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_PAYROLL_USER]}>
+                  <PayrunsPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/payroll/payruns/:id"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_PAYROLL_USER]}>
+                  <PayrunDetailPage />
+                </RoleProtectedRoute>
+              }
+            />
             <Route path="/payroll/payslips" element={<PayslipsPage />} />
             <Route path="/payroll/payslips/:id" element={<PayslipDetailPage />} />
-            <Route path="/payroll/salary-structures" element={<SalaryStructuresPage />} />
-            <Route path="/payroll/salary-rules" element={<SalaryRulesPage />} />
+            <Route
+              path="/payroll/salary-structures"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_PAYROLL_USER]}>
+                  <SalaryStructuresPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/payroll/salary-rules"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_PAYROLL_USER]}>
+                  <SalaryRulesPage />
+                </RoleProtectedRoute>
+              }
+            />
 
             {/* Reports & System Administration */}
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/users" element={<UsersPage />} />
+            <Route
+              path="/reports"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.HR_MANAGER]}>
+                  <ReportsPage />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <RoleProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                  <UsersPage />
+                </RoleProtectedRoute>
+              }
+            />
 
             {/* Commercial & Business Strategy */}
             <Route path="/business-model" element={<BusinessModelPage />} />
+            <Route path="/business-flow" element={<BusinessFlowPage />} />
+            <Route path="/b2b-portal" element={<B2BPortalPage />} />
           </Route>
 
           {/* Catch-all redirect */}

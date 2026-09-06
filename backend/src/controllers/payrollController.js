@@ -57,6 +57,16 @@ const getPayrollById = async (req, res) => {
 const getEmployeePayroll = async (req, res) => {
   try {
     const { employeeId } = req.params;
+
+    const privilegedRoles = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'payroll'];
+    const isPrivileged = privilegedRoles.includes(req.user?.role?.toLowerCase());
+    if (!isPrivileged && req.user?.employee_id !== parseInt(employeeId, 10)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Forbidden: You do not have permission to view another employee's payroll history." 
+      });
+    }
+
     const [payslips] = await db.query(
       `SELECT ps.*, p.period_month, p.period_year, p.status AS payroll_status, p.paid_at
        FROM payslips ps

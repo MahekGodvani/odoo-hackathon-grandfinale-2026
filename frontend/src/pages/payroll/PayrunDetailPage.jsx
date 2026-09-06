@@ -9,6 +9,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Toast from '../../components/common/Toast';
 import { payrollApi } from '../../api/payrollApi';
 import { payslipApi } from '../../api/payslipApi';
+import { useAuth, ROLES } from '../../context/AuthContext';
 import {
   Calculator,
   CheckCircle,
@@ -27,6 +28,9 @@ import {
  */
 const PayrunDetailPage = () => {
   const { id } = useParams();
+  const { role } = useAuth();
+  const isPayrollManager = role === ROLES.HR_PAYROLL_MANAGER || role === ROLES.ADMIN;
+
   const [payrun, setPayrun] = useState(null);
   const [payslips, setPayslips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -180,7 +184,8 @@ const PayrunDetailPage = () => {
               icon={CreditCard}
               onClick={handleMarkPaid}
               isLoading={isProcessing}
-              disabled={!isValidated}
+              disabled={!isValidated || !isPayrollManager}
+              title={!isPayrollManager ? "Requires HR Payroll Manager role to disburse funds" : undefined}
             >
               Mark Paid
             </Button>

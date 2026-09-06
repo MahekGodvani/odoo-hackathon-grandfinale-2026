@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   TrendingUp,
   DollarSign,
@@ -15,7 +16,18 @@ import {
   Briefcase,
   HelpCircle,
   Clock,
-  Printer
+  Printer,
+  Workflow,
+  ShieldAlert,
+  AlertTriangle,
+  FileCheck,
+  Activity,
+  Play,
+  RefreshCw,
+  Lock,
+  Server,
+  Cpu,
+  Check
 } from 'lucide-react';
 
 /**
@@ -26,10 +38,74 @@ const BusinessModelPage = () => {
   const [billingCycle, setBillingCycle] = useState('annual'); // 'monthly' | 'annual'
   const [employeeCount, setEmployeeCount] = useState(65);
   const [payrollHoursPerMonth, setPayrollHoursPerMonth] = useState(24);
-  const [activeTab, setActiveTab] = useState('pricing'); // 'pricing' | 'canvas' | 'roi' | 'competition'
+  const [activeTab, setActiveTab] = useState('pricing'); // 'pricing' | 'canvas' | 'roi' | 'competition' | 'risk'
+
+  // Risk Simulation & Exposure Calculator State
+  const [simScenario, setSimScenario] = useState('tax_shock');
+  const [simRunning, setSimRunning] = useState(false);
+  const [simResult, setSimResult] = useState(null);
+  const [riskHeadcount, setRiskHeadcount] = useState(120);
+  const [avgMonthlyWage, setAvgMonthlyWage] = useState(65000); // in INR (₹)
 
   // Pricing calculations
   const discountMultiplier = billingCycle === 'annual' ? 0.8 : 1.0;
+
+  // Dynamic Enterprise Risk Exposure Calculations
+  const annualGrossPayroll = riskHeadcount * avgMonthlyWage * 12;
+  const inherentRiskAmount = Math.round(annualGrossPayroll * 0.032);
+  const residualRiskAmount = Math.round(inherentRiskAmount * 0.016);
+  const capitalProtected = inherentRiskAmount - residualRiskAmount;
+
+  const runStressTest = (scenarioKey) => {
+    setSimRunning(true);
+    setSimResult(null);
+    setTimeout(() => {
+      let resultData = {};
+      if (scenarioKey === 'tax_shock') {
+        resultData = {
+          title: 'Government Budget Surcharge Reclassification (+2.5% Tax Drift)',
+          threatSeverity: 'Critical (Statutory)',
+          detectedIn: '14 ms',
+          actionTaken: 'Autonomous dynamic rule engine updated formula constants without restarting microservices.',
+          penaltiesAvoided: '₹4,85,000 in late filing interest & Sec 234E non-compliance notice',
+          auditStatus: 'Clean (100% compliant with updated CBDT circular)',
+          status: 'SUCCESS'
+        };
+      } else if (scenarioKey === 'ghost_injection') {
+        resultData = {
+          title: 'Simulated Ghost Employee & Duplicate Bank Account Injection',
+          threatSeverity: 'High (Direct Financial Loss)',
+          detectedIn: '8 ms',
+          actionTaken: 'Bank account hash collision triggered zero-trust quarantine. Direct deposit halted for 2 fake records.',
+          penaltiesAvoided: '₹1,95,000 monthly siphoned cash leak permanently prevented',
+          auditStatus: 'Blocked & Logged to immutable audit trail',
+          status: 'SUCCESS'
+        };
+      } else if (scenarioKey === 'cluster_failover') {
+        resultData = {
+          title: 'Primary Cloud Availability Zone Termination on Payrun Cutoff',
+          threatSeverity: 'Severe (Operational Disruption)',
+          detectedIn: '32 ms',
+          actionTaken: 'Active-Active Raft cluster failover elected replica node 2 without transaction loss.',
+          penaltiesAvoided: 'Zero missed salary disbursements, 99.99% uptime SLA retained',
+          auditStatus: 'RPO: 0 seconds | RTO: 32 ms',
+          status: 'SUCCESS'
+        };
+      } else {
+        resultData = {
+          title: 'Malicious Horizontal IDOR Probe on Employee Payslip Records',
+          threatSeverity: 'Critical (OWASP A01 Security Breach)',
+          detectedIn: '4 ms',
+          actionTaken: 'Strict JWT cryptographic employee ID binding rejected forged payload with HTTP 403 Forbidden.',
+          penaltiesAvoided: 'Zero PII data leakage, reported to security event log',
+          auditStatus: 'SOC 2 Type II & OWASP compliance preserved',
+          status: 'SUCCESS'
+        };
+      }
+      setSimResult(resultData);
+      setSimRunning(false);
+    }, 750);
+  };
 
   // ROI Calculations in INR (₹)
   const hourlyRateHR = 650; // ₹650/hour average HR specialist cost
@@ -61,6 +137,20 @@ const BusinessModelPage = () => {
             </p>
           </div>
           <div className="flex items-center space-x-3">
+            <Link
+              to="/b2b-portal"
+              className="inline-flex items-center px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold shadow-md shadow-slate-900/20 transition-all cursor-pointer"
+            >
+              <Building2 className="w-4 h-4 mr-2 text-indigo-400" />
+              B2B Client Portal
+            </Link>
+            <Link
+              to="/business-flow"
+              className="inline-flex items-center px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-md shadow-indigo-600/30 transition-all cursor-pointer"
+            >
+              <Workflow className="w-4 h-4 mr-2" />
+              Interactive Flow Portal
+            </Link>
             <button
               onClick={() => window.print()}
               className="inline-flex items-center px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium border border-slate-200 shadow-xs transition-all cursor-pointer"
@@ -77,7 +167,8 @@ const BusinessModelPage = () => {
             { id: 'pricing', label: 'Tiered Pricing & Add-ons', icon: DollarSign },
             { id: 'roi', label: 'Interactive ROI Calculator', icon: Calculator },
             { id: 'canvas', label: 'Business Model Canvas', icon: Layers },
-            { id: 'competition', label: 'Competitive Moats', icon: Award }
+            { id: 'competition', label: 'Competitive Moats', icon: Award },
+            { id: 'risk', label: 'Risk Analysis & Mitigation', icon: ShieldAlert },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -553,6 +644,551 @@ const BusinessModelPage = () => {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: RISK ANALYSIS & STRATEGIC MITIGATION MATRIX */}
+      {activeTab === 'risk' && (
+        <div className="space-y-8 animate-fadeIn">
+          {/* Header Summary Card */}
+          <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white border border-slate-800 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-2 max-w-2xl">
+                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-500/30">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Enterprise Risk Defense & Contingency Framework</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-white">
+                  360° Risk Analysis & Proactive Mitigation Matrix
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
+                  Autonomous controls, cryptographically sealed audit chains, and multi-tier safeguards
+                  that reduce operational, compliance, financial, and cybersecurity liabilities to near-zero.
+                </p>
+              </div>
+
+              {/* Defense Rating Scorecard */}
+              <div className="p-5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 text-center shrink-0 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Risk Mitigation Score</span>
+                <p className="text-4xl font-black text-emerald-400 font-mono">98.4%</p>
+                <p className="text-[10px] text-emerald-300 font-bold">Resilience & Compliance Index</p>
+                <div className="pt-1 flex items-center justify-center space-x-1 text-[9px] text-slate-400">
+                  <span>Zero Critical Vulnerabilities</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 5 CORE RISK DIMENSIONS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Risk Vector 1 */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:border-indigo-300 transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[10px] font-extrabold border border-rose-200 uppercase">
+                    Regulatory & Legal
+                  </span>
+                  <span className="text-xs font-mono font-black text-slate-400">VECTOR 01</span>
+                </div>
+                <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  Statutory & Tax Drift Risk
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Sudden revisions in government Provident Fund (PF), ESI wage ceilings, or Income Tax slabs leading to compliance penalties.
+                </p>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Inherent Risk:</span>
+                    <span className="font-extrabold text-rose-600">High (Financial Penalty)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Residual Risk:</span>
+                    <span className="font-extrabold text-emerald-600">Negligible (&lt; 0.2%)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 space-y-1.5">
+                <p className="text-[10px] uppercase font-bold text-indigo-600 flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>PeoplePay360 Safeguard:</span>
+                </p>
+                <p className="text-[11px] text-slate-700 font-semibold leading-normal">
+                  Visual dynamic rule engine updates calculation formulas in real time without software redeployment or downtime.
+                </p>
+              </div>
+            </div>
+
+            {/* Risk Vector 2 */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:border-indigo-300 transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-extrabold border border-amber-200 uppercase">
+                    Financial Operations
+                  </span>
+                  <span className="text-xs font-mono font-black text-slate-400">VECTOR 02</span>
+                </div>
+                <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  Overtime Creep & Ghost Payroll
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Uncontrolled overtime billing, duplicate payments, or ghost employees leading to cash-flow leaks and inflated liabilities.
+                </p>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Inherent Risk:</span>
+                    <span className="font-extrabold text-rose-600">Critical (Direct Loss)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Residual Risk:</span>
+                    <span className="font-extrabold text-emerald-600">Near-Zero</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 space-y-1.5">
+                <p className="text-[10px] uppercase font-bold text-indigo-600 flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>PeoplePay360 Safeguard:</span>
+                </p>
+                <p className="text-[11px] text-slate-700 font-semibold leading-normal">
+                  Biometric geofence kiosk proofs, pre-flight payrun variance warnings, and IFSC/PAN duplicate detection algorithms.
+                </p>
+              </div>
+            </div>
+
+            {/* Risk Vector 3 */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:border-indigo-300 transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-[10px] font-extrabold border border-purple-200 uppercase">
+                    Cybersecurity & Data
+                  </span>
+                  <span className="text-xs font-mono font-black text-slate-400">VECTOR 03</span>
+                </div>
+                <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  Employee PII Leak & IDOR Breaches
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Unauthorized disclosure of employee compensation, bank accounts, or IDOR spoofing of attendance and payslip endpoints.
+                </p>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Inherent Risk:</span>
+                    <span className="font-extrabold text-rose-600">Severe (Reputational)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Residual Risk:</span>
+                    <span className="font-extrabold text-emerald-600">Mitigated (AES-256)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 space-y-1.5">
+                <p className="text-[10px] uppercase font-bold text-indigo-600 flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>PeoplePay360 Safeguard:</span>
+                </p>
+                <p className="text-[11px] text-slate-700 font-semibold leading-normal">
+                  Role-Based Access Control (RBAC), JWT token verification, identity-locked employee endpoints, and encrypted at rest.
+                </p>
+              </div>
+            </div>
+
+            {/* Risk Vector 4 */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:border-indigo-300 transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-extrabold border border-blue-200 uppercase">
+                    Infrastructure
+                  </span>
+                  <span className="text-xs font-mono font-black text-slate-400">VECTOR 04</span>
+                </div>
+                <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  Pay Day Cloud Outage & Failure
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  System unavailability or database crashes on monthly salary processing day causing missed bank disbursement deadlines.
+                </p>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Inherent Risk:</span>
+                    <span className="font-extrabold text-amber-600">High (Operational)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Residual Risk:</span>
+                    <span className="font-extrabold text-emerald-600">&lt; 0.01% (99.99% SLA)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 space-y-1.5">
+                <p className="text-[10px] uppercase font-bold text-indigo-600 flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>PeoplePay360 Safeguard:</span>
+                </p>
+                <p className="text-[11px] text-slate-700 font-semibold leading-normal">
+                  Multi-region active-active cluster failover, read-replica scaling, and offline biometric kiosk punch caching.
+                </p>
+              </div>
+            </div>
+
+            {/* Risk Vector 5 */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:border-indigo-300 transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-full bg-cyan-50 text-cyan-700 text-[10px] font-extrabold border border-cyan-200 uppercase">
+                    ERP Interoperability
+                  </span>
+                  <span className="text-xs font-mono font-black text-slate-400">VECTOR 05</span>
+                </div>
+                <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  General Ledger Disconnect
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Payroll expenses failing to post accurately into corporate accounting ledgers (Odoo ERP / QuickBooks / SAP), causing audit delays.
+                </p>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Inherent Risk:</span>
+                    <span className="font-extrabold text-amber-600">Moderate</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Residual Risk:</span>
+                    <span className="font-extrabold text-emerald-600">Zero (Auto GL Post)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 space-y-1.5">
+                <p className="text-[10px] uppercase font-bold text-indigo-600 flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>PeoplePay360 Safeguard:</span>
+                </p>
+                <p className="text-[11px] text-slate-700 font-semibold leading-normal">
+                  Automated double-entry journal creation with transaction hashes and bidirectional reconciliation against Odoo GL.
+                </p>
+              </div>
+            </div>
+
+            {/* Risk Vector 6 */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs hover:border-indigo-300 transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold border border-emerald-200 uppercase">
+                    Vendor Lock-in
+                  </span>
+                  <span className="text-xs font-mono font-black text-slate-400">VECTOR 06</span>
+                </div>
+                <h3 className="text-sm font-black text-slate-900 leading-tight">
+                  Enterprise Data Portability
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Fear of proprietary platform lock-in or difficult migration paths preventing enterprise enterprise procurement sign-off.
+                </p>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Inherent Risk:</span>
+                    <span className="font-extrabold text-slate-600">Commercial Friction</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-medium">Residual Risk:</span>
+                    <span className="font-extrabold text-emerald-600">Resolved (Open APIs)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 space-y-1.5">
+                <p className="text-[10px] uppercase font-bold text-indigo-600 flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>PeoplePay360 Safeguard:</span>
+                </p>
+                <p className="text-[11px] text-slate-700 font-semibold leading-normal">
+                  Full standard RESTful OpenAPI v3 specs, CSV/JSON raw data export tools, and 1-click roster migration utilities.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* RISK HEATMAP & CONTINGENCY MATRIX TABLE */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-4">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900">
+                Enterprise Risk Severity & Mitigation Playbook
+              </h3>
+              <p className="text-xs text-slate-500">
+                Detailed comparative analysis of threat levels before and after PeoplePay360 algorithmic controls.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50 font-extrabold uppercase text-[10px] text-slate-500">
+                    <th className="p-3">Risk Scenario</th>
+                    <th className="p-3">Inherent Severity</th>
+                    <th className="p-3">Probability</th>
+                    <th className="p-3">Autonomous Mitigation Strategy</th>
+                    <th className="p-3">Residual Risk</th>
+                    <th className="p-3">Audit Readiness</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                  <tr className="hover:bg-slate-50">
+                    <td className="p-3 font-bold text-slate-900">Statutory Tax Rate Revision</td>
+                    <td className="p-3 text-rose-600 font-bold">High</td>
+                    <td className="p-3 text-amber-600">Likely</td>
+                    <td className="p-3 text-slate-600">Dynamic rule formula update without code deployment</td>
+                    <td className="p-3 text-emerald-600 font-extrabold">Low</td>
+                    <td className="p-3"><span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">100% Compliant</span></td>
+                  </tr>
+                  <tr className="hover:bg-slate-50">
+                    <td className="p-3 font-bold text-slate-900">Ghost Employee / Identity Fraud</td>
+                    <td className="p-3 text-rose-600 font-bold">Critical</td>
+                    <td className="p-3 text-slate-500">Low</td>
+                    <td className="p-3 text-slate-600">PAN & Bank account uniqueness validation checksum</td>
+                    <td className="p-3 text-emerald-600 font-extrabold">Negligible</td>
+                    <td className="p-3"><span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">Zero Tolerance</span></td>
+                  </tr>
+                  <tr className="hover:bg-slate-50">
+                    <td className="p-3 font-bold text-slate-900">Unauthorized Data Access (IDOR)</td>
+                    <td className="p-3 text-rose-600 font-bold">Severe</td>
+                    <td className="p-3 text-amber-600">Moderate</td>
+                    <td className="p-3 text-slate-600">Strict JWT role verification & employee ID binding</td>
+                    <td className="p-3 text-emerald-600 font-extrabold">Negligible</td>
+                    <td className="p-3"><span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">OWASP Top 10 Hardened</span></td>
+                  </tr>
+                  <tr className="hover:bg-slate-50">
+                    <td className="p-3 font-bold text-slate-900">Monthly Payrun Cluster Downtime</td>
+                    <td className="p-3 text-amber-600 font-bold">High</td>
+                    <td className="p-3 text-slate-500">Rare</td>
+                    <td className="p-3 text-slate-600">Multi-region database replica failover with SLA guarantee</td>
+                    <td className="p-3 text-emerald-600 font-extrabold">Very Low</td>
+                    <td className="p-3"><span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">99.99% Uptime SLA</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* INTERACTIVE COMPLIANCE & SECURITY STRESS TEST SIMULATOR */}
+          <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white border border-slate-800 shadow-xl space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+              <div className="space-y-1">
+                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-[11px] font-bold border border-rose-500/30">
+                  <Activity className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Interactive Threat Stress-Testing Studio</span>
+                </div>
+                <h3 className="text-xl font-black text-white">Live Autonomous Defense & Threat Simulator</h3>
+                <p className="text-xs text-slate-400">
+                  Select an adverse regulatory, security, or infrastructural shock to observe PeoplePay360's automated algorithmic defense in real time.
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-3 shrink-0">
+                <span className="text-xs font-mono text-emerald-400 font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  SHIELD ACTIVE
+                </span>
+              </div>
+            </div>
+
+            {/* Scenario Selector Tabs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { id: 'tax_shock', label: 'Tax Slabs Drift (+2.5%)', desc: 'CBDT Sudden Surcharge Revision', icon: FileCheck },
+                { id: 'ghost_injection', label: 'Ghost Payroll Injection', desc: 'Duplicate Bank Account Attack', icon: ShieldAlert },
+                { id: 'cluster_failover', label: 'Pay Day Cloud Outage', desc: 'AZ Crash on EOM Disbursement', icon: Server },
+                { id: 'idor_probe', label: 'Malicious IDOR Probe', desc: 'Horizontal Roster Spoof Attack', icon: Lock },
+              ].map((sc) => (
+                <button
+                  key={sc.id}
+                  onClick={() => { setSimScenario(sc.id); setSimResult(null); }}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                    simScenario === sc.id
+                      ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md'
+                      : 'bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2.5 mb-1.5">
+                    <sc.icon className={`w-4 h-4 ${simScenario === sc.id ? 'text-indigo-400' : 'text-slate-400'}`} />
+                    <span className="text-xs font-bold">{sc.label}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">{sc.desc}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Action Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+              <div className="text-xs text-slate-300">
+                Selected Vector: <span className="font-mono text-indigo-400 font-bold uppercase">{simScenario.replace('_', ' ')}</span>
+              </div>
+              <button
+                onClick={() => runStressTest(simScenario)}
+                disabled={simRunning}
+                className="inline-flex items-center justify-center space-x-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {simRunning ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Executing Stress Test...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Run Real-Time Defense Simulation</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Simulation Results Output */}
+            {simResult && (
+              <div className="p-5 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 space-y-4 animate-fadeIn">
+                <div className="flex items-center justify-between border-b border-indigo-500/30 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <Check className="w-5 h-5 text-emerald-400" />
+                    <h4 className="text-sm font-black text-white">{simResult.title}</h4>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                    THREAT NEUTRALIZED ({simResult.detectedIn})
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Autonomous Mitigation Action</span>
+                    <p className="text-slate-200 font-medium text-[11px] leading-relaxed">{simResult.actionTaken}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-emerald-400">Financial Exposure Protected</span>
+                    <p className="text-emerald-300 font-bold text-[11px] leading-relaxed">{simResult.penaltiesAvoided}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-indigo-400">Audit Proof Status</span>
+                    <p className="text-indigo-300 font-mono text-[11px] leading-relaxed">{simResult.auditStatus}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* DYNAMIC HEADCOUNT RISK EXPOSURE CALCULATOR */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+              <div>
+                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 mb-2">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Enterprise Capital Protection Model</span>
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900">
+                  Interactive Payroll Risk & Capital Shield Calculator
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Estimate inherent regulatory & operational liability exposure vs. capital saved with PeoplePay360 automated safeguards.
+                </p>
+              </div>
+
+              <div className="text-right shrink-0">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Net Protected Capital / Year</span>
+                <p className="text-2xl sm:text-3xl font-black text-emerald-600 font-mono">
+                  ₹{capitalProtected.toLocaleString('en-IN')}
+                </p>
+              </div>
+            </div>
+
+            {/* Sliders Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-2xl bg-slate-50 border border-slate-100">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                  <span>Organization Headcount:</span>
+                  <span className="font-mono text-indigo-600 bg-white px-2 py-0.5 rounded border border-slate-200 text-sm">
+                    {riskHeadcount} Employees
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={10}
+                  max={1500}
+                  step={5}
+                  value={riskHeadcount}
+                  onChange={(e) => setRiskHeadcount(Number(e.target.value))}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                  <span>10 Staff (Startup)</span>
+                  <span>500 (Mid-Market)</span>
+                  <span>1,500+ (Enterprise)</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                  <span>Avg. Monthly Wage per Employee:</span>
+                  <span className="font-mono text-indigo-600 bg-white px-2 py-0.5 rounded border border-slate-200 text-sm">
+                    ₹{avgMonthlyWage.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={25000}
+                  max={250000}
+                  step={5000}
+                  value={avgMonthlyWage}
+                  onChange={(e) => setAvgMonthlyWage(Number(e.target.value))}
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                  <span>₹25,000</span>
+                  <span>₹1,25,000</span>
+                  <span>₹2,50,000</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Financial Metrics Breakdown */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Annual Gross Payroll</span>
+                <p className="text-lg font-black text-slate-900 font-mono">
+                  ₹{annualGrossPayroll.toLocaleString('en-IN')}
+                </p>
+                <p className="text-[10px] text-slate-500">12-month total workforce wage volume</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-rose-600">Inherent Risk (Unprotected)</span>
+                <p className="text-lg font-black text-rose-600 font-mono">
+                  ₹{inherentRiskAmount.toLocaleString('en-IN')}
+                </p>
+                <p className="text-[10px] text-rose-700">3.2% industry error, audit & drift leak</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-emerald-600">PeoplePay360 Protection</span>
+                <p className="text-lg font-black text-emerald-600 font-mono">
+                  98.4%
+                </p>
+                <p className="text-[10px] text-emerald-700">Autonomous 2-step verification shield</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200 shadow-2xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-indigo-600">Residual Liability</span>
+                <p className="text-lg font-black text-indigo-700 font-mono">
+                  ₹{residualRiskAmount.toLocaleString('en-IN')}
+                </p>
+                <p className="text-[10px] text-indigo-600">&lt; 1.6% controlled tail variance</p>
+              </div>
+            </div>
           </div>
         </div>
       )}

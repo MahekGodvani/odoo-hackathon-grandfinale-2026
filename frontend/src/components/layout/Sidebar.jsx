@@ -17,7 +17,9 @@ import {
   TrendingUp,
   ShieldCheck,
   CheckCircle2,
-  Lock
+  Lock,
+  Workflow,
+  Building2
 } from 'lucide-react';
 
 /**
@@ -37,27 +39,29 @@ const Sidebar = ({ isOpen, onClose }) => {
     {
       title: 'HR OPERATIONS',
       items: [
-        { name: 'Employees', path: '/employees', icon: Users, roles: [ROLES.HR_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN, ROLES.EMPLOYEE], badge: 'Active' },
-        { name: 'Contracts', path: '/contracts', icon: FileText, roles: [ROLES.HR_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN], badge: null },
-        { name: 'Working Schedules', path: '/schedules', icon: Calendar, roles: [ROLES.HR_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN], badge: '40h' },
-        { name: 'Attendance', path: '/attendance', icon: Clock, roles: [ROLES.HR_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN, ROLES.EMPLOYEE], badge: null },
-        { name: 'Time Off', path: '/time-off/requests', icon: Briefcase, roles: [ROLES.HR_MANAGER, ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN, ROLES.EMPLOYEE], badge: 'Leaves' },
+        { name: 'Employees', path: '/employees', icon: Users, roles: [ROLES.HR_MANAGER], badge: 'Active' },
+        { name: 'Contracts', path: '/contracts', icon: FileText, roles: [ROLES.HR_MANAGER], badge: null },
+        { name: 'Working Schedules', path: '/schedules', icon: Calendar, roles: [ROLES.HR_MANAGER], badge: '40h' },
+        { name: 'Attendance', path: '/attendance', icon: Clock, roles: [ROLES.EMPLOYEE, ROLES.HR_MANAGER], badge: null },
+        { name: 'Time Off', path: '/time-off/requests', icon: Briefcase, roles: [ROLES.EMPLOYEE, ROLES.HR_MANAGER], badge: 'Leaves' },
       ]
     },
     {
       title: 'PAYROLL ENGINE',
       items: [
-        { name: 'Payruns', path: '/payroll/payruns', icon: CreditCard, roles: [ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN], badge: '2-Step' },
-        { name: 'Payslips', path: '/payroll/payslips', icon: DollarSign, roles: [ROLES.HR_PAYROLL_USER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN, ROLES.EMPLOYEE], badge: 'PDF' },
-        { name: 'Salary Structures', path: '/payroll/salary-structures', icon: Layers, roles: [ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN], badge: null },
-        { name: 'Salary Rules', path: '/payroll/salary-rules', icon: Sliders, roles: [ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN], badge: 'Engine' },
+        { name: 'Payruns', path: '/payroll/payruns', icon: CreditCard, roles: [ROLES.HR_PAYROLL_USER], badge: '2-Step' },
+        { name: 'Payslips', path: '/payroll/payslips', icon: DollarSign, roles: [ROLES.EMPLOYEE, ROLES.HR_PAYROLL_USER], badge: 'PDF' },
+        { name: 'Salary Structures', path: '/payroll/salary-structures', icon: Layers, roles: [ROLES.HR_PAYROLL_USER], badge: null },
+        { name: 'Salary Rules', path: '/payroll/salary-rules', icon: Sliders, roles: [ROLES.HR_PAYROLL_USER], badge: 'Engine' },
       ]
     },
     {
       title: 'INTELLIGENCE & COMMERCIAL',
       items: [
-        { name: 'Payroll Analytics', path: '/reports', icon: BarChart3, roles: [ROLES.HR_MANAGER, ROLES.HR_PAYROLL_MANAGER, ROLES.ADMIN], badge: 'Live' },
-        { name: 'Business Model', path: '/business-model', icon: TrendingUp, roles: [], badge: 'ROI' },
+        { name: 'Analytics & Risk Hub', path: '/reports', icon: BarChart3, roles: [ROLES.HR_MANAGER, ROLES.HR_PAYROLL_USER], badge: 'AI Guard' },
+        { name: 'B2B Client Portal', path: '/b2b-portal', icon: Building2, roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER], badge: 'B2B' },
+        { name: 'Business Flow Portal', path: '/business-flow', icon: Workflow, roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER], badge: 'Flow' },
+        { name: 'Business Model', path: '/business-model', icon: TrendingUp, roles: [ROLES.ADMIN, ROLES.HR_PAYROLL_MANAGER], badge: 'ROI' },
       ]
     },
     {

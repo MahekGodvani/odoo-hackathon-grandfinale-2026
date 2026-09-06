@@ -62,18 +62,18 @@ const ContractsPage = () => {
 
   const handleOpenCreate = () => {
     setSelectedContract(null);
-    if (employees.length > 0) {
-      setFormData({
-        employeeId: employees[0].id,
-        startDate: '2026-01-01',
-        endDate: '2026-12-31',
-        department: employees[0].department,
-        position: employees[0].position,
-        wage: 50000,
-        structureId: 'struct-1',
-        status: 'Active',
-      });
-    }
+    const defaultEmp = employees.length > 0 ? employees[0] : null;
+    const defaultStruct = structures.length > 0 ? structures[0] : null;
+    setFormData({
+      employeeId: defaultEmp ? defaultEmp.id : '',
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
+      department: defaultEmp ? defaultEmp.department : 'Engineering',
+      position: defaultEmp ? defaultEmp.position : '',
+      wage: 50000,
+      structureId: defaultStruct ? defaultStruct.id : 1,
+      status: 'Active',
+    });
     setIsModalOpen(true);
   };
 
@@ -86,7 +86,7 @@ const ContractsPage = () => {
       department: contract.department,
       position: contract.position,
       wage: contract.wage,
-      structureId: contract.structureId || 'struct-1',
+      structureId: contract.structureId || (structures[0]?.id || 1),
       status: contract.status,
     });
     setIsModalOpen(true);
@@ -96,8 +96,8 @@ const ContractsPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const emp = employees.find((e) => e.id === formData.employeeId);
-      const struct = structures.find((s) => s.id === formData.structureId);
+      const emp = employees.find((e) => String(e.id) === String(formData.employeeId));
+      const struct = structures.find((s) => String(s.id) === String(formData.structureId));
 
       const payload = {
         ...formData,
@@ -117,6 +117,7 @@ const ContractsPage = () => {
       fetchData();
     } catch (err) {
       console.error('Error saving contract', err);
+      setToastMessage(err.response?.data?.message || err.message || 'Failed to save contract agreement');
     } finally {
       setIsSubmitting(false);
     }
@@ -203,7 +204,7 @@ const ContractsPage = () => {
             required
             value={formData.employeeId}
             onChange={(e) => {
-              const emp = employees.find((x) => x.id === e.target.value);
+              const emp = employees.find((x) => String(x.id) === String(e.target.value));
               setFormData((prev) => ({
                 ...prev,
                 employeeId: e.target.value,

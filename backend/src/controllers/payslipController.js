@@ -20,9 +20,12 @@ const getPayslips = async (req, res) => {
     `;
     const params = [];
 
-    if (req.user?.role === 'employee' && req.user?.employee_id) {
+    const privilegedRoles = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'payroll'];
+    const isPrivileged = privilegedRoles.includes(req.user?.role?.toLowerCase());
+
+    if (!isPrivileged) {
       query += ` AND ps.employee_id = ?`;
-      params.push(req.user.employee_id);
+      params.push(req.user?.employee_id || 0);
     } else if (employee_id) {
       query += ` AND ps.employee_id = ?`;
       params.push(employee_id);
@@ -71,8 +74,10 @@ const getPayslipById = async (req, res) => {
 
     const [payslip] = rows;
 
-    if (req.user?.role === 'employee' && req.user?.employee_id !== payslip.employee_id) {
-      return res.status(403).json({ success: false, message: 'Access denied.' });
+    const privilegedRoles = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'payroll'];
+    const isPrivileged = privilegedRoles.includes(req.user?.role?.toLowerCase());
+    if (!isPrivileged && req.user?.employee_id !== payslip.employee_id) {
+      return res.status(403).json({ success: false, message: 'Forbidden: Access denied.' });
     }
 
     return res.json({ success: true, payslip });
@@ -87,8 +92,10 @@ const getEmployeePayslips = async (req, res) => {
   try {
     const { employeeId } = req.params;
 
-    if (req.user?.role === 'employee' && req.user?.employee_id !== parseInt(employeeId, 10)) {
-      return res.status(403).json({ success: false, message: 'Access denied.' });
+    const privilegedRoles = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'payroll'];
+    const isPrivileged = privilegedRoles.includes(req.user?.role?.toLowerCase());
+    if (!isPrivileged && req.user?.employee_id !== parseInt(employeeId, 10)) {
+      return res.status(403).json({ success: false, message: 'Forbidden: Access denied.' });
     }
 
     const [rows] = await db.query(
@@ -128,6 +135,14 @@ const downloadPayslip = async (req, res) => {
     }
 
     const [payslip] = rows;
+
+    const isPrivileged = ['admin', 'hr', 'payroll'].includes(req.user?.role);
+    if (!isPrivileged && req.user?.employee_id !== payslip.employee_id) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Forbidden: You do not have permission to download another employee\'s payslip.' 
+      });
+    }
 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="payslip-${payslip.employee_code}-${payslip.period_month}-${payslip.period_year}.json"`);

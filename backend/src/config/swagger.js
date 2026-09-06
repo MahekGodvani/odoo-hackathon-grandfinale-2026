@@ -41,7 +41,8 @@ const swaggerDocument = {
     { name: 'Notifications', description: 'System alerts & announcements' },
     { name: 'Settings', description: 'Application configuration & company settings' },
     { name: 'Reports', description: 'Analytics, tax withholding, & CSV/Excel export' },
-    { name: 'Roles & Permissions', description: 'Role-based access control (RBAC)' }
+    { name: 'Roles & Permissions', description: 'Role-based access control (RBAC)' },
+    { name: 'Search', description: 'Unified Elastic Search engine with typo tolerance, fuzzy matching & aggregations' }
   ],
   paths: {
     // -------------------------------------------------------------
@@ -1037,6 +1038,80 @@ const swaggerDocument = {
           }
         },
         responses: { 200: { description: 'User role updated' } }
+      }
+    },
+    // -------------------------------------------------------------
+    // ELASTIC SEARCH
+    // -------------------------------------------------------------
+    '/api/search': {
+      get: {
+        tags: ['Search'],
+        summary: 'Unified Elastic Search across all HR & Payroll entities with typo-tolerance and faceted aggregations',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { in: 'query', name: 'q', schema: { type: 'string' }, description: 'Search term (supports typos & fuzzy matching)' },
+          { in: 'query', name: 'category', schema: { type: 'string', enum: ['all', 'employees', 'payslips', 'contracts', 'attendance', 'leaves', 'payruns', 'modules'] }, description: 'Category filter' },
+          { in: 'query', name: 'limit', schema: { type: 'integer' }, description: 'Maximum hits to return' }
+        ],
+        responses: {
+          200: {
+            description: 'Elastic query results',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    query: { type: 'string' },
+                    total: { type: 'integer' },
+                    tookMs: { type: 'integer' },
+                    engine: { type: 'string' },
+                    hits: { type: 'array' },
+                    aggregations: { type: 'object' }
+                  }
+                }
+              }
+            }
+          },
+          401: { description: 'Unauthorized - Authentication required' }
+        }
+      }
+    },
+    '/api/search/suggestions': {
+      get: {
+        tags: ['Search'],
+        summary: 'Instant autocomplete suggestions',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { in: 'query', name: 'q', schema: { type: 'string' }, description: 'Prefix query' }
+        ],
+        responses: {
+          200: { description: 'Suggestions list' },
+          401: { description: 'Unauthorized - Authentication required' }
+        }
+      }
+    },
+    '/api/search/stats': {
+      get: {
+        tags: ['Search'],
+        summary: 'Elastic search index health, document count, and cluster status',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Engine statistics' },
+          401: { description: 'Unauthorized - Authentication required' }
+        }
+      }
+    },
+    '/api/search/reindex': {
+      post: {
+        tags: ['Search'],
+        summary: 'Trigger real-time re-indexing of all data (Admin & HR only)',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: { description: 'Re-indexing status' },
+          401: { description: 'Unauthorized - Authentication required' },
+          403: { description: 'Forbidden - Requires admin or hr role' }
+        }
       }
     }
   }

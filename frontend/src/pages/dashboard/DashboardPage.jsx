@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import StatCard from '../../components/common/StatCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import TopEmployeeLeaderboard from '../../components/dashboard/TopEmployeeLeaderboard';
 import { dashboardApi } from '../../api/dashboardApi';
 import {
   Users,
@@ -32,32 +33,64 @@ import {
 const DashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Filters state
   const [period, setPeriod] = useState('August 2026');
   const [department, setDepartment] = useState('All');
   const [employeeType, setEmployeeType] = useState('All');
 
-  useEffect(() => {
-    async function loadDashboard() {
-      setLoading(true);
-      try {
-        const res = await dashboardApi.getDashboardStats({ period, department, employeeType });
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await dashboardApi.getDashboardStats({ period, department, employeeType });
+      if (res?.data) {
         setStats(res.data);
-      } catch (err) {
-        console.error('Failed to load dashboard data', err);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      console.error('Failed to load dashboard data', err);
+      setError(err?.message || 'Failed to connect to backend server');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadDashboard();
   }, [period, department, employeeType]);
 
-  if (loading || !stats) {
+  if (loading && !stats) {
     return <LoadingSpinner label="Loading Payroll Dashboard..." />;
   }
 
-  const { kpis, alerts, attendanceSummary, timeOffSummary, salaryByDepartment } = stats;
+  if (error && !stats) {
+    return (
+      <div className="p-12 text-center bg-white rounded-3xl border border-rose-200 shadow-xs space-y-4 my-8">
+        <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+          <AlertTriangle className="w-6 h-6" />
+        </div>
+        <h3 className="text-base font-bold text-slate-800">Unable to Fetch Dashboard Data</h3>
+        <p className="text-xs text-slate-500 max-w-md mx-auto">{error}</p>
+        <button
+          onClick={loadDashboard}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition cursor-pointer"
+        >
+          Retry Connection
+        </button>
+      </div>
+    );
+  }
+
+  const safeStats = stats || {
+    kpis: { totalEmployees: 0, activeEmployees: 0, totalNetSalary: 0, payslipsGenerated: 0, approvedTimeOff: 0, attendanceHealth: 100 },
+    alerts: [],
+    attendanceSummary: { present: 0, late: 0, absent: 0, overtime: 0, missingCheckout: 0 },
+    timeOffSummary: { approved: 0, pending: 0, remainingLeave: 0 },
+    salaryByDepartment: []
+  };
+
+  const { kpis, alerts, attendanceSummary, timeOffSummary, salaryByDepartment } = safeStats;
   
 
   return (
@@ -249,6 +282,9 @@ const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* TOP 5 WORKFORCE CHAMPIONS LEADERBOARD */}
+      <TopEmployeeLeaderboard activeDepartment={department} />
 
       {/* LOWER SECTION: ATTENDANCE & TIME OFF OVERVIEWS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

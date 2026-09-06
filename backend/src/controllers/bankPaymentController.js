@@ -12,14 +12,23 @@ const createBankAccount = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Employee ID, bank name, and account number are required.' });
     }
 
+    const targetEmpId = parseInt(employee_id, 10);
+    const isPrivileged = ['admin', 'hr', 'payroll'].includes(req.user?.role);
+    if (!isPrivileged && req.user?.employee_id !== targetEmpId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Forbidden: You do not have permission to add bank account details for another employee.' 
+      });
+    }
+
     if (is_primary) {
-      await db.query(`UPDATE bank_accounts SET is_primary = 0 WHERE employee_id = ?`, [employee_id]);
+      await db.query(`UPDATE bank_accounts SET is_primary = 0 WHERE employee_id = ?`, [targetEmpId]);
     }
 
     const [result] = await db.query(
       `INSERT INTO bank_accounts (employee_id, bank_name, account_number, ifsc_code, account_type, is_primary)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [employee_id, bank_name, account_number, ifsc_code ?? null, account_type, is_primary ? 1 : 0]
+      [targetEmpId, bank_name, account_number, ifsc_code ?? null, account_type, is_primary ? 1 : 0]
     );
 
     return res.status(201).json({
@@ -33,13 +42,20 @@ const createBankAccount = async (req, res) => {
   }
 };
 
-// GET /api/bank-accounts/:employeeId
 const getBankAccountsByEmployee = async (req, res) => {
   try {
-    const { employeeId } = req.params;
+    const targetEmpId = parseInt(req.params.employeeId, 10);
+    const isPrivileged = ['admin', 'hr', 'payroll'].includes(req.user?.role);
+    if (!isPrivileged && req.user?.employee_id !== targetEmpId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Forbidden: You do not have permission to view banking information for another employee.' 
+      });
+    }
+
     const [accounts] = await db.query(
       `SELECT * FROM bank_accounts WHERE employee_id = ? ORDER BY is_primary DESC, id DESC`,
-      [employeeId]
+      [targetEmpId]
     );
     return res.json({ success: true, count: accounts.length, bank_accounts: accounts });
   } catch (error) {
@@ -48,13 +64,30 @@ const getBankAccountsByEmployee = async (req, res) => {
   }
 };
 
-// PUT /api/bank-accounts/:id
 const updateBankAccount = async (req, res) => {
   try {
-    const { id } = req.params;
+    const bankAccountId = parseInt(req.params.id, 10);
     const { bank_name, account_number, ifsc_code, account_type, is_primary } = req.body;
 
-    const [result] = await db.query(
+    const [existing] = await db.query(`SELECT * FROM bank_accounts WHERE id = ?`, [bankAccountId]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: 'Bank account not found.' });
+    }
+
+    const bankAccount = existing[0];
+    const isPrivileged = ['admin', 'hr', 'payroll'].includes(req.user?.role);
+    if (!isPrivileged && req.user?.employee_id !== bankAccount.employee_id) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Forbidden: You do not have permission to modify this bank account.' 
+      });
+    }
+
+    if (is_primary) {
+      await db.query(`UPDATE bank_accounts SET is_primary = 0 WHERE employee_id = ? AND id != ?`, [bankAccount.employee_id, bankAccountId]);
+    }
+
+    await db.query(
       `UPDATE bank_accounts 
        SET bank_name = COALESCE(?, bank_name),
            account_number = COALESCE(?, account_number),
@@ -62,12 +95,8 @@ const updateBankAccount = async (req, res) => {
            account_type = COALESCE(?, account_type),
            is_primary = COALESCE(?, is_primary)
        WHERE id = ?`,
-      [bank_name, account_number, ifsc_code, account_type, is_primary, id]
+      [bank_name, account_number, ifsc_code, account_type, is_primary !== undefined ? (is_primary ? 1 : 0) : bankAccount.is_primary, bankAccountId]
     );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Bank account not found.' });
-    }
 
     return res.json({ success: true, message: 'Bank account updated successfully.' });
   } catch (error) {
@@ -155,6 +184,14 @@ const getPaymentById = async (req, res) => {
 
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Payment record not found.' });
+    }
+
+    const isPrivileged = ['admin', 'hr', 'payroll'].includes(req.user?.role);
+    if (!isPrivileged && req.user?.employee_id !== rows[0].employee_id) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Forbidden: You do not have permission to view payment details for another employee.' 
+      });
     }
 
     return res.json({ success: true, payment: rows[0] });

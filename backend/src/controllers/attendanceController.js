@@ -12,7 +12,15 @@ const calculateHours = (checkIn, checkOut) => {
 // POST /api/attendance/check-in
 const checkIn = async (req, res) => {
   try {
-    const employee_id = req.body.employee_id ?? req.user?.employee_id;
+    // High Security Fix: Prevent IDOR / Employee Spoofing
+    let employee_id;
+    if (req.user?.role === 'admin' || req.user?.role === 'hr') {
+      employee_id = req.body.employee_id ?? req.user?.employee_id ?? req.user?.id;
+    } else {
+      // Non-admin/HR users can ONLY punch in for their own authenticated employee ID
+      employee_id = req.user?.employee_id ?? req.user?.id;
+    }
+
     if (!employee_id) {
       return res.status(400).json({ success: false, message: 'Employee ID is required.' });
     }
@@ -42,7 +50,14 @@ const checkIn = async (req, res) => {
 // POST /api/attendance/check-out
 const checkOut = async (req, res) => {
   try {
-    const employee_id = req.body.employee_id ?? req.user?.employee_id;
+    // High Security Fix: Prevent IDOR / Employee Spoofing
+    let employee_id;
+    if (req.user?.role === 'admin' || req.user?.role === 'hr') {
+      employee_id = req.body.employee_id ?? req.user?.employee_id ?? req.user?.id;
+    } else {
+      employee_id = req.user?.employee_id ?? req.user?.id;
+    }
+
     if (!employee_id) {
       return res.status(400).json({ success: false, message: 'Employee ID is required.' });
     }
@@ -83,7 +98,6 @@ const getAttendanceLogs = async (req, res) => {
     const employee_id = req.query.employee_id || req.query.employeeId;
     const { month, year, date } = req.query;
 
-
     let query = `
       SELECT a.*, e.first_name, e.last_name, e.employee_code, e.department
       FROM attendance a
@@ -92,10 +106,16 @@ const getAttendanceLogs = async (req, res) => {
     `;
     const params = [];
 
-    if (employee_id) {
+    // High Security Fix: Prevent Horizontal Privilege Escalation
+    if (req.user?.role === 'employee') {
+      const selfId = req.user?.employee_id ?? req.user?.id;
+      query += ` AND a.employee_id = ?`;
+      params.push(selfId);
+    } else if (employee_id) {
       query += ` AND a.employee_id = ?`;
       params.push(employee_id);
     }
+
     if (date) {
       query += ` AND a.date = ?`;
       params.push(date);
@@ -119,6 +139,18 @@ const getAttendanceLogs = async (req, res) => {
 const getEmployeeAttendance = async (req, res) => {
   try {
     const { employeeId } = req.params;
+
+    // High Security Fix: Horizontal Access Control check
+    if (req.user?.role === 'employee') {
+      const selfId = String(req.user?.employee_id ?? req.user?.id);
+      if (selfId !== String(employeeId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: You are only authorized to view your own attendance logs.'
+        });
+      }
+    }
+
     const [rows] = await db.query(
       `SELECT a.*, e.first_name, e.last_name, e.employee_code
        FROM attendance a
@@ -138,6 +170,18 @@ const getEmployeeAttendance = async (req, res) => {
 const getMonthlyAttendance = async (req, res) => {
   try {
     const { employeeId } = req.params;
+
+    // High Security Fix: Horizontal Access Control check
+    if (req.user?.role === 'employee') {
+      const selfId = String(req.user?.employee_id ?? req.user?.id);
+      if (selfId !== String(employeeId)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: You are only authorized to view your own monthly attendance.'
+        });
+      }
+    }
+
     const month = parseInt(req.query.month ?? (new Date().getMonth() + 1), 10);
     const year = parseInt(req.query.year ?? new Date().getFullYear(), 10);
 
@@ -215,9 +259,17 @@ const deleteAttendance = async (req, res) => {
   }
 };
 
-// Generic log attendance
+// Generic log attendance (Admin / HR Manual Logging & Adjustments Only)
 const logAttendance = async (req, res) => {
   try {
+    const isPrivileged = ['admin', 'hr'].includes(req.user?.role);
+    if (!isPrivileged) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: Only HR and Admin administrators can manually log or backdate attendance records. Employees must use live check-in and check-out.'
+      });
+    }
+
     const { employee_id, date, check_in, check_out, status = 'present' } = req.body;
     if (!employee_id || !date) {
       return res.status(400).json({ success: false, message: 'Employee ID and date are required.' });

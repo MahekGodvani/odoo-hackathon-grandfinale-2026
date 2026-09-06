@@ -17,6 +17,10 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
+import scheduleRoutes2 from './routes/scheduleRoutes2.js';
+import salaryStructureRoutes from './routes/salaryStructureRoutes.js';
+import leaveTypeRoutes from './routes/leaveTypeRoutes.js';
 import { setupSwagger } from './config/swagger.js';
 
 const app = express();
@@ -51,7 +55,8 @@ app.get('/', (req, res) => res.json({
     'Notifications (/api/notifications)',
     'Settings (/api/settings, /api/company/settings)',
     'Reports (/api/reports)',
-    'Roles & Permissions (/api/roles, /api/permissions)'
+    'Roles & Permissions (/api/roles, /api/permissions)',
+    'Elastic Search (/api/search)'
   ]
 }));
 
@@ -68,9 +73,13 @@ app.use('/api/payslips', payslipRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/search', searchRoutes);
 app.use('/api', bankPaymentRoutes);
 app.use('/api', settingsRoutes);
 app.use('/api', roleRoutes);
+app.use('/api/schedules', scheduleRoutes2);
+app.use('/api/salary', salaryStructureRoutes);
+app.use('/api/leave', leaveTypeRoutes);
 
 // 404 Handler
 app.use((req, res) => res.status(404).json({ 

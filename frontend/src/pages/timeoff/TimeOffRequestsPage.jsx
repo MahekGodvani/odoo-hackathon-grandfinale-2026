@@ -46,15 +46,14 @@ const TimeOffRequestsPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const params = role === ROLES.EMPLOYEE && user ? { employeeId: user.id } : {};
       const [reqRes, typeRes, empRes] = await Promise.all([
-        timeOffApi.getTimeOffRequests(params),
+        timeOffApi.getTimeOffRequests(),
         timeOffApi.getTimeOffTypes(),
         employeeApi.getEmployees(),
       ]);
-      setRequests(reqRes.data);
-      setTypes(typeRes.data);
-      setEmployees(empRes.data);
+      setRequests(reqRes?.data || []);
+      setTypes(typeRes?.data || []);
+      setEmployees(empRes?.data || []);
     } catch (err) {
       console.error('Error fetching time off data', err);
     } finally {
@@ -67,39 +66,50 @@ const TimeOffRequestsPage = () => {
   }, [role, user]);
 
   const handleOpenCreate = () => {
-    if (employees.length > 0) {
-      setFormData({
-        employeeId: employees[0].id,
-        typeId: types[0]?.id || 'tot-1',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
-        duration: 1,
-        reason: 'Personal leave',
-      });
-    }
+    const currentEmp = employees.find(e => String(e.rawId) === String(user?.employee_id) || String(e.id) === String(user?.employee_id)) || employees[0];
+    const initialEmpId = currentEmp ? currentEmp.id : (user?.employee_id ? String(user.employee_id) : '');
+    const initialTypeId = types[0]?.id ? String(types[0].id) : '';
+
+    setFormData({
+      employeeId: initialEmpId,
+      typeId: initialTypeId,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      duration: 1,
+      reason: 'Personal leave',
+    });
     setIsRequestModalOpen(true);
   };
 
   const handleCreateRequest = async (e) => {
     e.preventDefault();
+    if (!formData.employeeId) {
+      setToastMessage('Please select an employee.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const emp = employees.find((x) => x.id === formData.employeeId);
-      const selectedType = types.find((t) => t.id === formData.typeId);
+      const emp = employees.find((x) => String(x.id) === String(formData.employeeId) || String(x.rawId) === String(formData.employeeId));
+      const selectedType = types.find((t) => String(t.id) === String(formData.typeId));
 
       const payload = {
-        ...formData,
+        employeeId: emp?.rawId || emp?.id || formData.employeeId,
+        leaveType: selectedType ? selectedType.name : 'Casual',
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        duration: Number(formData.duration) || 1,
+        reason: formData.reason,
         employeeName: emp ? emp.name : 'Employee',
-        typeName: selectedType ? selectedType.name : 'Paid Vacation Leave',
-        duration: Number(formData.duration),
+        typeName: selectedType ? selectedType.name : 'Casual Leave',
       };
 
       await timeOffApi.createTimeOffRequest(payload);
-      setToastMessage('Time off request submitted');
+      setToastMessage('Time off request submitted successfully.');
       setIsRequestModalOpen(false);
       fetchData();
     } catch (err) {
       console.error('Error submitting request', err);
+      setToastMessage(err?.response?.data?.message || 'Failed to submit time off request');
     } finally {
       setIsSubmitting(false);
     }
@@ -225,7 +235,11 @@ const TimeOffRequestsPage = () => {
             required
             value={formData.employeeId}
             onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-            options={employees.map((e) => ({ value: e.id, label: `${e.name} (${e.id})` }))}
+            options={employees.map((e) => ({
+              value: e.id,
+              label: `${e.name} (${e.code || e.employee_code || `EMP-${e.id}`} - ${e.department || 'Staff'})`
+            }))}
+            disabled={role === ROLES.EMPLOYEE && employees.length === 1}
           />
 
           <Select
@@ -234,7 +248,7 @@ const TimeOffRequestsPage = () => {
             required
             value={formData.typeId}
             onChange={(e) => setFormData({ ...formData, typeId: e.target.value })}
-            options={types.map((t) => ({ value: t.id, label: t.name }))}
+            options={types.map((t) => ({ value: t.id, label: `${t.name} (${t.unit || 'Days'})` }))}
           />
 
           <div className="grid grid-cols-2 gap-4">

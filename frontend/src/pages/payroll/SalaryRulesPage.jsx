@@ -9,13 +9,17 @@ import Select from '../../components/common/Select';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Toast from '../../components/common/Toast';
 import { payrollApi } from '../../api/payrollApi';
-import { Plus, Sliders, Edit, Calculator } from 'lucide-react';
+import { useAuth, ROLES } from '../../context/AuthContext';
+import { Plus, Sliders, Edit, Calculator, Eye } from 'lucide-react';
 
 /**
  * PEOPLEPAY360 - SALARY RULES MODULE
  * Features instant live formula preview box for rule configurations.
  */
 const SalaryRulesPage = () => {
+  const { role } = useAuth();
+  const isReadOnly = role === ROLES.HR_PAYROLL_USER;
+
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -113,6 +117,7 @@ const SalaryRulesPage = () => {
       fetchRules();
     } catch (err) {
       console.error('Error saving salary rule', err);
+      setToastMessage(err.response?.data?.message || err.message || 'Error saving salary rule');
     } finally {
       setIsSubmitting(false);
     }
@@ -144,7 +149,7 @@ const SalaryRulesPage = () => {
       )
     },
     { header: 'Status', accessor: 'status', render: (r) => <StatusBadge status={r.status} /> },
-    {
+    ...(!isReadOnly ? [{
       header: 'Actions',
       render: (r) => (
         <button
@@ -154,7 +159,7 @@ const SalaryRulesPage = () => {
           <Edit className="w-4 h-4" />
         </button>
       )
-    }
+    }] : [])
   ];
 
   return (
@@ -164,9 +169,15 @@ const SalaryRulesPage = () => {
         subtitle="Configure earnings, allowances, deductions, and gross-to-net formulas."
         breadcrumbs={[{ label: 'Salary Rules' }]}
         actions={
-          <Button variant="primary" icon={Plus} onClick={handleOpenCreate}>
-            New Salary Rule
-          </Button>
+          isReadOnly ? (
+            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg border border-slate-200 flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5" /> Read-Only Mode
+            </span>
+          ) : (
+            <Button variant="primary" icon={Plus} onClick={handleOpenCreate}>
+              New Salary Rule
+            </Button>
+          )
         }
       />
 

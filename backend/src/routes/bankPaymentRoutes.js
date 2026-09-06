@@ -10,8 +10,8 @@ router.get('/bank-accounts/:employeeId', authenticate, bankPaymentController.get
 router.put('/bank-accounts/:id', authenticate, bankPaymentController.updateBankAccount);
 
 // Payments
-router.post('/payments', authenticate, authorize(['admin', 'payroll']), bankPaymentController.recordPayment);
-router.get('/payments', authenticate, authorize(['admin', 'payroll', 'hr']), bankPaymentController.getPayments);
+router.post('/payments', authenticate, authorize(['hr_payroll_manager']), bankPaymentController.recordPayment);
+router.get('/payments', authenticate, authorize(['hr_payroll_user', 'hr_payroll_manager']), bankPaymentController.getPayments);
 router.get('/payments/:id', authenticate, bankPaymentController.getPaymentById);
 
 export default router;

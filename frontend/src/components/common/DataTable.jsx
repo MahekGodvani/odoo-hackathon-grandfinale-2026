@@ -19,11 +19,57 @@ const DataTable = ({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
-  // Search filtering
+  // Helper for single typo tolerance
+  const fuzzyMatch = (text, term) => {
+    if (!text || !term) return false;
+    const t = String(text).toLowerCase();
+    const q = String(term).toLowerCase();
+    if (t.includes(q)) return true;
+    if (q.length >= 4) {
+      // Allow 1 typo
+      const words = t.split(/\s+/);
+      for (const w of words) {
+        if (w.length >= 4 && Math.abs(w.length - q.length) <= 1) {
+          let diff = 0;
+          for (let i = 0; i < Math.min(w.length, q.length); i++) {
+            if (w[i] !== q[i]) diff++;
+          }
+          if (diff <= 1) return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  // Enhanced Elastic Multi-Column Search Filtering
   const filteredData = data.filter((row) => {
-    if (!searchTerm) return true;
-    const val = row[searchField] || row.name || row.employeeName || '';
-    return String(val).toLowerCase().includes(searchTerm.toLowerCase());
+    if (!searchTerm.trim()) return true;
+    const terms = searchTerm.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+    // Aggregate all searchable text from standard properties and active columns
+    const rowValues = [
+      row[searchField],
+      row.name,
+      row.employeeName,
+      row.employee_code,
+      row.code,
+      row.id,
+      row.email,
+      row.department,
+      row.position,
+      row.designation,
+      row.status,
+      row.contract_type,
+      row.period,
+      row.structureName,
+      ...columns.map((c) => (c.accessor ? row[c.accessor] : null)),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    // Every query word should match anywhere in the row (multi-field search)
+    return terms.every((term) => fuzzyMatch(rowValues, term));
   });
 
   // Pagination calculation

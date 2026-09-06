@@ -326,13 +326,155 @@ const getDashboardStats = async (req, res) => {
 };
 
 
+// GET /api/dashboard/rankings
+const getTopEmployeeRankings = async (req, res) => {
+  try {
+    const { department } = req.query;
+    const hasDeptFilter = department && department !== 'All';
+
+    // Check caller privilege for salary visibility
+    const privilegedRoles = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'hr_manager', 'payroll', 'hr'];
+    const userRole = (req.user?.role || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
+    const isPrivileged = privilegedRoles.includes(userRole);
+
+    let deptClause = '';
+    const deptParams = [];
+    if (hasDeptFilter) {
+      deptClause = 'AND e.department = ?';
+      deptParams.push(department);
+    }
+
+    // 1. Top 5 Working Hours
+    const [hoursRows] = await db.query(
+      `SELECT 
+         e.id, 
+         e.employee_code, 
+         e.first_name, 
+         e.last_name, 
+         e.department, 
+         e.designation,
+         ROUND(COALESCE(SUM(a.total_hours), 0), 1) AS total_hours,
+         ROUND(COALESCE(AVG(a.total_hours), 0), 1) AS avg_hours_per_day,
+         COUNT(a.id) AS total_shifts
+       FROM employees e
+       JOIN attendance a ON a.employee_id = e.id
+       WHERE e.status = 'active' ${deptClause}
+       GROUP BY e.id
+       ORDER BY total_hours DESC, total_shifts DESC
+       LIMIT 5`,
+      deptParams
+    );
+
+    // 2. Top 5 Attendance (Highest Present Days & Rate)
+    const [attendanceRows] = await db.query(
+      `SELECT 
+         e.id, 
+         e.employee_code, 
+         e.first_name, 
+         e.last_name, 
+         e.department, 
+         e.designation,
+         COUNT(a.id) AS total_logged_days,
+         SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) AS present_days,
+         SUM(CASE WHEN a.status = 'half_day' THEN 1 ELSE 0 END) AS half_days,
+         ROUND(COALESCE(SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END) / NULLIF(COUNT(a.id), 0) * 100, 100), 1) AS attendance_rate
+       FROM employees e
+       JOIN attendance a ON a.employee_id = e.id
+       WHERE e.status = 'active' ${deptClause}
+       GROUP BY e.id
+       ORDER BY present_days DESC, attendance_rate DESC
+       LIMIT 5`,
+      deptParams
+    );
+
+    // 3. Top 5 Highest Payroll / Compensation Package
+    const [payrollRows] = await db.query(
+      `SELECT 
+         e.id, 
+         e.employee_code, 
+         e.first_name, 
+         e.last_name, 
+         e.department, 
+         e.designation,
+         c.contract_type,
+         c.base_salary,
+         (c.base_salary + c.hra_allowance + c.transport_allowance + c.other_allowance) AS total_compensation
+       FROM employees e
+       JOIN contracts c ON c.employee_id = e.id AND c.status = 'active'
+       WHERE e.status = 'active' ${deptClause}
+       ORDER BY total_compensation DESC
+       LIMIT 5`,
+      deptParams
+    );
+
+    // Format results with rank, honor badge, and role masking
+    const topWorkingHours = hoursRows.map((r, idx) => ({
+      rank: idx + 1,
+      id: r.id,
+      employee_code: r.employee_code,
+      name: `${r.first_name} ${r.last_name}`,
+      department: r.department,
+      designation: r.designation,
+      total_hours: parseFloat(r.total_hours),
+      avg_hours_per_day: parseFloat(r.avg_hours_per_day),
+      total_shifts: Number(r.total_shifts),
+      badge: idx === 0 ? 'Workforce Titan' : idx === 1 ? 'Endurance Master' : idx === 2 ? 'Shift Hero' : 'Top Contributor'
+    }));
+
+    const topAttendance = attendanceRows.map((r, idx) => ({
+      rank: idx + 1,
+      id: r.id,
+      employee_code: r.employee_code,
+      name: `${r.first_name} ${r.last_name}`,
+      department: r.department,
+      designation: r.designation,
+      present_days: Number(r.present_days),
+      total_logged_days: Number(r.total_logged_days),
+      attendance_rate: parseFloat(r.attendance_rate),
+      badge: idx === 0 ? 'Pillar of Punctuality' : idx === 1 ? 'Flawless Presence' : idx === 2 ? 'Steadfast Champ' : 'Reliable Performer'
+    }));
+
+    const topPayroll = payrollRows.map((r, idx) => {
+      const isMasked = !isPrivileged;
+      return {
+        rank: idx + 1,
+        id: r.id,
+        employee_code: r.employee_code,
+        name: `${r.first_name} ${r.last_name}`,
+        department: r.department,
+        designation: r.designation,
+        contract_type: r.contract_type,
+        is_masked: isMasked,
+        total_compensation: isMasked ? 'Confidential' : parseFloat(r.total_compensation),
+        base_salary: isMasked ? 'Confidential' : parseFloat(r.base_salary),
+        badge: idx === 0 ? 'Apex Compensation' : idx === 1 ? 'Executive Tier' : idx === 2 ? 'Senior Strategic' : 'High Value'
+      };
+    });
+
+    return res.json({
+      success: true,
+      department: hasDeptFilter ? department : 'All',
+      isPrivileged,
+      data: {
+        topWorkingHours,
+        topAttendance,
+        topPayroll
+      }
+    });
+  } catch (error) {
+    console.error('getTopEmployeeRankings error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export {
   getAdminDashboard,
   getHrDashboard,
   getEmployeeDashboard,
   getPayrollSummary,
   getAttendanceSummary,
-  getDashboardStats
+  getDashboardStats,
+  getTopEmployeeRankings
 };
 
 export default {
@@ -341,5 +483,6 @@ export default {
   getEmployeeDashboard,
   getPayrollSummary,
   getAttendanceSummary,
-  getDashboardStats
+  getDashboardStats,
+  getTopEmployeeRankings
 };

@@ -3,6 +3,17 @@ import db from '../config/db.js';
 // GET /api/salaries
 const getSalaries = async (req, res) => {
   try {
+    const privilegedRoles = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'hr_manager', 'payroll', 'hr'];
+    const userRole = (req.user?.role || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
+    const isPrivileged = privilegedRoles.includes(userRole);
+
+    if (!isPrivileged) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Forbidden: Insufficient privileges to view all salaries.' 
+      });
+    }
+
     const [salaries] = await db.query(
       `SELECT c.*, e.first_name, e.last_name, e.employee_code, e.department, e.designation
        FROM contracts c
@@ -20,13 +31,30 @@ const getSalaries = async (req, res) => {
 const getSalaryByEmployeeId = async (req, res) => {
   try {
     const { employeeId } = req.params;
+    const targetEmpId = parseInt(employeeId, 10);
+
+    const privilegedRoles = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'hr_manager', 'payroll', 'hr'];
+    const userRole = (req.user?.role || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
+    const isPrivileged = privilegedRoles.includes(userRole);
+
+    const callerEmpId = req.user?.employee_id ? parseInt(req.user.employee_id, 10) : null;
+
+    if (!isPrivileged) {
+      if (!callerEmpId || !targetEmpId || callerEmpId !== targetEmpId) {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Forbidden: You do not have permission to view another employee's salary." 
+        });
+      }
+    }
+
     const [salaries] = await db.query(
       `SELECT c.*, e.first_name, e.last_name, e.employee_code, e.department
        FROM contracts c
        JOIN employees e ON e.id = c.employee_id
        WHERE c.employee_id = ?
        ORDER BY c.status = 'active' DESC, c.id DESC`,
-      [employeeId]
+      [targetEmpId]
     );
 
     if (salaries.length === 0) {

@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import bcrypt from 'bcryptjs';
 
 // List all employees (with active contract summary)
 export const getAllEmployees = async (req, res) => {
@@ -18,6 +19,13 @@ export const getAllEmployees = async (req, res) => {
       WHERE 1=1
     `;
     const params = [];
+    const privilegedRoles = ['admin', 'hr_manager', 'hr_payroll_manager', 'hr_payroll_user', 'hr', 'payroll'];
+    const isPrivileged = privilegedRoles.includes(req.user?.role?.toLowerCase());
+
+    if (!isPrivileged) {
+      query += ` AND e.id = ?`;
+      params.push(req.user?.employee_id || 0);
+    }
 
     if (company_id) {
       query += ` AND e.company_id = ?`;
@@ -51,6 +59,15 @@ export const getAllEmployees = async (req, res) => {
 export const getEmployeeById = async (req, res) => {
   try {
     const { id } = req.params;
+    const privilegedRoles = ['admin', 'hr_manager', 'hr_payroll_manager', 'hr_payroll_user', 'hr', 'payroll'];
+    const isPrivileged = privilegedRoles.includes(req.user?.role?.toLowerCase());
+
+    if (!isPrivileged && req.user?.employee_id !== parseInt(id, 10)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Forbidden: You do not have permission to view another employee's profile." 
+      });
+    }
     const [employees] = await db.query(
       `SELECT e.*, u.email AS user_email, u.role,
               c.id AS contract_id, c.contract_type, c.base_salary, c.hra_allowance,
@@ -103,9 +120,10 @@ export const createEmployee = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing required employee fields.' });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
     const [userResult] = await conn.query(
       `INSERT INTO users (company_id, email, password_hash, role) VALUES (?, ?, ?, ?)`,
-      [company_id, email, `hash_${password}`, role]
+      [company_id, email, hashedPassword, role]
     );
     const userId = userResult.insertId;
 

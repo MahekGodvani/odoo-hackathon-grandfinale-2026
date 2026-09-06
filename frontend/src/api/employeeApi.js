@@ -1,9 +1,8 @@
-import apiClient, { USE_MOCK_DATA } from './axios';
-import { mockDataStore } from '../services/mockDataStore';
+import apiClient from './axios';
 
 /**
  * PEOPLEPAY360 - EMPLOYEE API SERVICE
- * Connects directly to backend /api/employees with fallback support.
+ * All operations connect directly to backend /api/employees — no mock fallback.
  */
 
 const getAvatarUrl = (name, id) => {
@@ -29,18 +28,17 @@ const normalizeEmployee = (emp) => {
     lastName: emp.last_name || '',
     email: emp.email || '',
     phone: emp.phone || '',
-    department: emp.department || 'Engineering',
-    position: emp.designation || emp.position || 'Software Engineer',
-    designation: emp.designation || emp.position || 'Software Engineer',
-    manager: emp.manager || 'Karan Mehta',
+    department: emp.department || '',
+    position: emp.designation || emp.position || '',
+    designation: emp.designation || emp.position || '',
+    manager: emp.manager || '',
     scheduleName: emp.scheduleName || 'Standard Full-Time (40h)',
     status: (emp.status === 'active' || emp.status === 'Active') ? 'Active' : (emp.status || 'Active'),
     type: emp.type || (emp.contract_type === 'part_time' ? 'Part-time' : emp.contract_type === 'contract' ? 'Contract' : 'Full-time'),
-    joinDate: emp.joining_date ? String(emp.joining_date).slice(0, 10) : emp.joinDate || '2025-01-01',
-
+    joinDate: emp.joining_date ? String(emp.joining_date).slice(0, 10) : emp.joinDate || '',
     avatar: getAvatarUrl(fullName, emp.id),
-    wage: emp.wage || emp.base_salary || 5000,
-    baseSalary: emp.base_salary || emp.wage || 5000,
+    wage: emp.wage || emp.base_salary || 0,
+    baseSalary: emp.base_salary || emp.wage || 0,
     bankDetails: emp.bank_name ? {
       bankName: emp.bank_name,
       accountNo: emp.bank_account_no || emp.account_number,
@@ -51,113 +49,52 @@ const normalizeEmployee = (emp) => {
 
 export const employeeApi = {
   getEmployees: async () => {
-    if (!USE_MOCK_DATA) {
-      try {
-        const res = await apiClient.get('/employees');
-        if (res.data?.employees && Array.isArray(res.data.employees)) {
-          const list = res.data.employees.map(normalizeEmployee);
-          return { data: list };
-        }
-      } catch (err) {
-        console.warn('Live getEmployees failed, using fallback:', err?.message);
-      }
+    const res = await apiClient.get('/employees');
+    if (res.data?.employees && Array.isArray(res.data.employees)) {
+      return { data: res.data.employees.map(normalizeEmployee) };
     }
-    const db = mockDataStore.get();
-    return { data: db.employees };
+    return { data: [] };
   },
 
   getEmployee: async (id) => {
-    if (!USE_MOCK_DATA) {
-      try {
-        const res = await apiClient.get(`/employees/${id}`);
-        if (res.data?.employee) {
-          return { data: normalizeEmployee(res.data.employee) };
-        }
-      } catch (err) {
-        console.warn('Live getEmployee failed, using fallback:', err?.message);
-      }
-    }
-    const db = mockDataStore.get();
-    const emp = db.employees.find((e) => String(e.id) === String(id) || e.code === id);
-    if (!emp) throw new Error('Employee not found');
-    return { data: emp };
-  },
-
-  createEmployee: async (empData) => {
-    if (!USE_MOCK_DATA) {
-      try {
-        const payload = {
-          first_name: empData.firstName || empData.name?.split(' ')[0] || 'Employee',
-          last_name: empData.lastName || empData.name?.split(' ').slice(1).join(' ') || '',
-          email: empData.email,
-          phone: empData.phone,
-          department: empData.department,
-          designation: empData.position || empData.designation,
-          joining_date: empData.joinDate || new Date().toISOString().slice(0, 10),
-          status: (empData.status || 'active').toLowerCase(),
-        };
-        const res = await apiClient.post('/employees', payload);
-        if (res.data?.success) {
-          return { data: { ...empData, id: res.data.employee_id } };
-        }
-      } catch (err) {
-        console.warn('Live createEmployee failed, using fallback:', err?.message);
-      }
-    }
-    const db = mockDataStore.get();
-    const newId = `EMP-${100 + db.employees.length + 1}`;
-    const newEmp = {
-      id: newId,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      status: 'Active',
-      joinDate: new Date().toISOString().split('T')[0],
-      ...empData,
-    };
-    db.employees.unshift(newEmp);
-    mockDataStore.save(db);
-    return { data: newEmp };
-  },
-
-  updateEmployee: async (id, empData) => {
-    if (!USE_MOCK_DATA) {
-      try {
-        const payload = {
-          first_name: empData.firstName || empData.name?.split(' ')[0],
-          last_name: empData.lastName || empData.name?.split(' ').slice(1).join(' '),
-          email: empData.email,
-          phone: empData.phone,
-          department: empData.department,
-          designation: empData.position || empData.designation,
-          status: empData.status?.toLowerCase(),
-        };
-        await apiClient.put(`/employees/${id}`, payload);
-        return { data: { ...empData, id } };
-      } catch (err) {
-        console.warn('Live updateEmployee failed, using fallback:', err?.message);
-      }
-    }
-    const db = mockDataStore.get();
-    const idx = db.employees.findIndex((e) => String(e.id) === String(id));
-    if (idx !== -1) {
-      db.employees[idx] = { ...db.employees[idx], ...empData };
-      mockDataStore.save(db);
-      return { data: db.employees[idx] };
+    const res = await apiClient.get(`/employees/${id}`);
+    if (res.data?.employee) {
+      return { data: normalizeEmployee(res.data.employee) };
     }
     throw new Error('Employee not found');
   },
 
+  createEmployee: async (empData) => {
+    const payload = {
+      first_name: empData.firstName || empData.name?.split(' ')[0] || 'Employee',
+      last_name: empData.lastName || empData.name?.split(' ').slice(1).join(' ') || '',
+      email: empData.email,
+      phone: empData.phone,
+      department: empData.department,
+      designation: empData.position || empData.designation,
+      joining_date: empData.joinDate || new Date().toISOString().slice(0, 10),
+      status: (empData.status || 'active').toLowerCase(),
+    };
+    const res = await apiClient.post('/employees', payload);
+    return { data: { ...empData, id: res.data.employee_id } };
+  },
+
+  updateEmployee: async (id, empData) => {
+    const payload = {
+      first_name: empData.firstName || empData.name?.split(' ')[0],
+      last_name: empData.lastName || empData.name?.split(' ').slice(1).join(' '),
+      email: empData.email,
+      phone: empData.phone,
+      department: empData.department,
+      designation: empData.position || empData.designation,
+      status: empData.status?.toLowerCase(),
+    };
+    await apiClient.put(`/employees/${id}`, payload);
+    return { data: { ...empData, id } };
+  },
+
   deleteEmployee: async (id) => {
-    if (!USE_MOCK_DATA) {
-      try {
-        await apiClient.delete(`/employees/${id}`);
-        return { data: { success: true } };
-      } catch (err) {
-        console.warn('Live deleteEmployee failed, using fallback:', err?.message);
-      }
-    }
-    const db = mockDataStore.get();
-    db.employees = db.employees.filter((e) => String(e.id) !== String(id));
-    mockDataStore.save(db);
+    await apiClient.delete(`/employees/${id}`);
     return { data: { success: true } };
   }
 };

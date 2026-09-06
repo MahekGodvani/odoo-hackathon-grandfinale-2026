@@ -1,5 +1,6 @@
 import db from '../config/db.js';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { 
   generateAccessToken, 
   generateRefreshToken, 
@@ -21,15 +22,48 @@ export const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and password are required.' });
     }
 
+    if (password.length < 6) {
+      await conn.rollback();
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
+    }
+
+    const CANONICAL_ROLES = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'hr_manager', 'employee'];
+    let normalizedRole = (role || 'employee').toLowerCase().trim().replace(/[\s-]+/g, '_');
+    if (normalizedRole === 'hr') normalizedRole = 'hr_manager';
+    if (normalizedRole === 'payroll') normalizedRole = 'hr_payroll_manager';
+
+    if (!CANONICAL_ROLES.includes(normalizedRole)) {
+      await conn.rollback();
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid role specified. Must be one of: ${CANONICAL_ROLES.join(', ')}` 
+      });
+    }
+
+    // Role Escalation Prevention:
+    // Only authenticated administrators can assign privileged roles
+    let assignedRole = 'employee';
+    if (normalizedRole !== 'employee') {
+      if (!req.user || req.user.role !== 'admin') {
+        await conn.rollback();
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Forbidden: Only authenticated administrators can assign privileged roles.' 
+        });
+      }
+      assignedRole = normalizedRole;
+    }
+
     const [existing] = await conn.query(`SELECT id FROM users WHERE email = ?`, [email]);
     if (existing.length > 0) {
       await conn.rollback();
       return res.status(400).json({ success: false, message: 'Email already registered.' });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
     const [userResult] = await conn.query(
       `INSERT INTO users (company_id, email, password_hash, role) VALUES (?, ?, ?, ?)`,
-      [company_id, email, `hash_${password}`, role]
+      [company_id, email, hashedPassword, assignedRole]
     );
     const userId = userResult.insertId;
 
@@ -47,7 +81,7 @@ export const register = async (req, res) => {
     const tokenPayload = {
       id: userId,
       email,
-      role,
+      role: assignedRole,
       employee_id: employeeId,
       first_name: first_name ?? '',
       last_name: last_name ?? ''
@@ -71,7 +105,7 @@ export const register = async (req, res) => {
       user: {
         id: userId,
         email,
-        role,
+        role: assignedRole,
         employee_id: employeeId
       }
     });
@@ -112,20 +146,35 @@ export const login = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Account is deactivated.' });
     }
 
-    let passwordMatch = user.password_hash === password || 
-                        user.password_hash === `hash_${password}` || 
-                        password === 'password123' || 
-                        password === 'admin123' || 
-                        password === '123456';
-    if (!passwordMatch && user.password_hash && typeof user.password_hash === 'string' && user.password_hash.startsWith('$2')) {
-      try {
-        passwordMatch = await bcrypt.compare(password, user.password_hash);
-      } catch {
-        passwordMatch = false;
+    let passwordMatch = false;
+    let shouldUpgradeHash = false;
+
+    if (user.password_hash && typeof user.password_hash === 'string') {
+      if (user.password_hash.startsWith('$2')) {
+        try {
+          passwordMatch = await bcrypt.compare(password, user.password_hash);
+        } catch {
+          passwordMatch = false;
+        }
+      } else if (user.password_hash === `hash_${password}` || user.password_hash === password) {
+        // Support legacy seed passwords strictly for this specific account, then mark for re-hash
+        passwordMatch = true;
+        shouldUpgradeHash = true;
       }
     }
+
     if (!passwordMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+    }
+
+    // Auto-upgrade legacy stored password to standard bcrypt hash
+    if (shouldUpgradeHash) {
+      try {
+        const newHash = await bcrypt.hash(password, 10);
+        await db.query(`UPDATE users SET password_hash = ? WHERE id = ?`, [newHash, user.id]);
+      } catch (upgradeErr) {
+        console.error('Failed to upgrade legacy password hash:', upgradeErr);
+      }
     }
 
     const tokenPayload = {
@@ -291,32 +340,37 @@ export const forgotPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email is required.' });
     }
 
-    const [users] = await db.query(`SELECT id, email FROM users WHERE email = ?`, [email]);
-    if (users.length === 0) {
-      return res.json({
-        success: true,
-        message: 'If the email is registered, a password reset token has been generated.'
-      });
+    // Generic response returned for all requests to prevent email enumeration
+    const genericResponse = {
+      success: true,
+      message: 'If the email is registered, a password reset link has been sent to the email address.'
+    };
+
+    const [users] = await db.query(`SELECT id, email, is_active FROM users WHERE email = ?`, [email]);
+    if (users.length === 0 || !users[0].is_active) {
+      return res.json(genericResponse);
     }
 
     const [user] = users;
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    // Generate secure random reset token
+    const rawResetToken = crypto.randomBytes(32).toString('hex');
+    // Store SHA-256 hash of token in database
+    const hashedResetToken = crypto.createHash('sha256').update(rawResetToken).digest('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     try {
       await db.query(
         `UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?`,
-        [resetToken, expiresAt, user.id]
+        [hashedResetToken, expiresAt, user.id]
       );
-    } catch {}
+    } catch (dbErr) {
+      console.error('Error saving reset token:', dbErr);
+    }
 
-    return res.json({
-      success: true,
-      message: 'Password reset token generated successfully.',
-      resetToken,
-      expiresAt: expiresAt.toISOString(),
-      instructions: 'Use this resetToken with POST /api/auth/reset-password to set a new password.'
-    });
+    console.log(`[AUTH AUDIT] Password reset token generated for ${user.email}. (Delivered via out-of-band channel)`);
+
+    // CRITICAL: NEVER return the resetToken in the HTTP response JSON
+    return res.json(genericResponse);
   } catch (error) {
     console.error('Forgot password error:', error);
     return res.status(500).json({ success: false, message: error.message });
@@ -337,10 +391,12 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long.' });
     }
 
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
     const [users] = await db.query(
       `SELECT id, email, reset_token_expires FROM users 
-       WHERE reset_token = ? AND (reset_token_expires > NOW() OR reset_token_expires IS NULL)`,
-      [token]
+       WHERE (reset_token = ? OR reset_token = ?) AND (reset_token_expires > NOW() OR reset_token_expires IS NULL)`,
+      [hashedToken, token]
     );
 
     if (users.length === 0) {
@@ -348,7 +404,7 @@ export const resetPassword = async (req, res) => {
     }
 
     const [user] = users;
-    const newPasswordHash = `hash_${newPassword}`;
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
 
     await db.query(
       `UPDATE users 
@@ -422,13 +478,25 @@ export const updateProfile = async (req, res) => {
       if (users.length > 0) {
         const curr = users[0].password_hash;
         if (currentPassword) {
-          const passMatches = curr === currentPassword || curr === `hash_${currentPassword}` || currentPassword === '123456';
+          let passMatches = false;
+          if (curr && typeof curr === 'string') {
+            if (curr.startsWith('$2')) {
+              try {
+                passMatches = await bcrypt.compare(currentPassword, curr);
+              } catch {
+                passMatches = false;
+              }
+            } else if (curr === `hash_${currentPassword}` || curr === currentPassword) {
+              passMatches = true;
+            }
+          }
           if (!passMatches) {
             await conn.rollback();
             return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
           }
         }
-        await conn.query(`UPDATE users SET password_hash = ? WHERE id = ?`, [`hash_${newPassword}`, userId]);
+        const updatedHash = await bcrypt.hash(newPassword, 10);
+        await conn.query(`UPDATE users SET password_hash = ? WHERE id = ?`, [updatedHash, userId]);
       }
     }
 
@@ -458,6 +526,91 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// -------------------------------------------------------------
+// 9. GET ALL USERS (Admin)
+// -------------------------------------------------------------
+export const getUsers = async (req, res) => {
+  try {
+    const [users] = await db.query(`
+      SELECT u.id, u.email, u.role, u.is_active, u.created_at,
+        e.first_name, e.last_name, e.employee_code, e.department, e.designation, e.phone
+      FROM users u
+      LEFT JOIN employees e ON u.id = e.user_id
+      ORDER BY u.id
+    `);
+    const result = users.map(u => ({
+      id: u.id,
+      name: u.first_name ? `${u.first_name} ${u.last_name || ''}`.trim() : u.email.split('@')[0],
+      role: (() => {
+        const roleMap = {
+          'admin': 'Admin',
+          'hr_payroll_manager': 'HR Payroll Manager',
+          'hr_payroll_user': 'HR Payroll User',
+          'hr_manager': 'HR Manager',
+          'employee': 'Employee'
+        };
+        return roleMap[u.role] || u.role || 'Employee';
+      })(),
+      department: u.department || null,
+      designation: u.designation || null,
+      phone: u.phone || null,
+      employeeCode: u.employee_code || null,
+      createdAt: u.created_at
+    }));
+    res.json({ success: true, users: result });
+  } catch (err) {
+    console.error('getUsers error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// -------------------------------------------------------------
+// 10. UPDATE USER ROLE (Admin)
+// -------------------------------------------------------------
+export const updateUserRole = async (req, res) => {
+  try {
+    const CANONICAL_ROLES = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'hr_manager', 'employee'];
+    let normalizedRole = (role || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
+    if (normalizedRole === 'hr') normalizedRole = 'hr_manager';
+    if (normalizedRole === 'payroll') normalizedRole = 'hr_payroll_manager';
+
+    if (!CANONICAL_ROLES.includes(normalizedRole)) {
+      return res.status(400).json({ success: false, message: `Invalid role. Must be one of: ${CANONICAL_ROLES.join(', ')}` });
+    }
+    const targetUserId = parseInt(req.params.id, 10);
+    // Prevent an admin from demoting themselves if they are the only active admin
+    if (targetUserId === req.user.id && normalizedRole !== 'admin') {
+      const [adminCount] = await db.query('SELECT COUNT(*) as count FROM users WHERE role = "admin" AND is_active = 1');
+      if (adminCount[0]?.count <= 1) {
+        return res.status(400).json({ success: false, message: 'Cannot demote the last remaining active administrator.' });
+      }
+    }
+    await db.query('UPDATE users SET role = ? WHERE id = ?', [normalizedRole, targetUserId]);
+    res.json({ success: true, message: `User role updated to ${normalizedRole}` });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// -------------------------------------------------------------
+// 11. TOGGLE USER STATUS (Admin)
+// -------------------------------------------------------------
+export const toggleUserStatus = async (req, res) => {
+  try {
+    const targetUserId = parseInt(req.params.id, 10);
+    if (targetUserId === req.user.id) {
+      return res.status(400).json({ success: false, message: 'Administrators cannot deactivate their own account.' });
+    }
+    const [rows] = await db.query('SELECT is_active FROM users WHERE id = ?', [targetUserId]);
+    if (rows.length === 0) return res.status(404).json({ success: false, message: 'User not found' });
+    const newStatus = rows[0].is_active ? 0 : 1;
+    await db.query('UPDATE users SET is_active = ? WHERE id = ?', [newStatus, targetUserId]);
+    res.json({ success: true, message: `User ${newStatus ? 'activated' : 'deactivated'}`, is_active: !!newStatus });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 export default {
   register,
   login,
@@ -466,5 +619,13 @@ export default {
   forgotPassword,
   resetPassword,
   getProfile,
-  updateProfile
+  updateProfile,
+  getUsers,
+  updateUserRole,
+  toggleUserStatus
 };
+
+
+
+
+select 

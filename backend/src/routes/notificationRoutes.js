@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.get('/', authenticate, notificationController.getNotifications);
 router.put('/:id/read', authenticate, notificationController.markNotificationRead);
-router.post('/send', authenticate, authorize(['admin', 'hr']), notificationController.sendNotification);
+router.post('/send', authenticate, authorize(['hr_manager']), notificationController.sendNotification);
 
 export default router;

@@ -92,16 +92,24 @@ const updateUserRole = async (req, res) => {
     const { id } = req.params;
     const { role } = req.body;
 
-    if (!role || !['admin', 'hr', 'payroll', 'employee'].includes(role)) {
-      return res.status(400).json({ success: false, message: 'Role must be admin, hr, payroll, or employee.' });
+    const CANONICAL_ROLES = ['admin', 'hr_payroll_manager', 'hr_payroll_user', 'hr_manager', 'employee'];
+    let normalizedRole = (role || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
+    if (normalizedRole === 'hr') normalizedRole = 'hr_manager';
+    if (normalizedRole === 'payroll') normalizedRole = 'hr_payroll_manager';
+
+    if (!role || !CANONICAL_ROLES.includes(normalizedRole)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Role must be one of: ${CANONICAL_ROLES.join(', ')}.` 
+      });
     }
 
-    const [result] = await db.query(`UPDATE users SET role = ? WHERE id = ?`, [role, id]);
+    const [result] = await db.query(`UPDATE users SET role = ? WHERE id = ?`, [normalizedRole, id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    return res.json({ success: true, message: `User role updated to ${role}.` });
+    return res.json({ success: true, message: `User role updated to ${normalizedRole}.` });
   } catch (error) {
     console.error('updateUserRole error:', error);
     return res.status(500).json({ success: false, message: error.message });

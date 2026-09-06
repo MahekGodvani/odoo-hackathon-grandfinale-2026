@@ -8,13 +8,17 @@ import Input from '../../components/common/Input';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Toast from '../../components/common/Toast';
 import { payrollApi } from '../../api/payrollApi';
-import { Plus, Layers, Sliders, ArrowUp, ArrowDown } from 'lucide-react';
+import { useAuth, ROLES } from '../../context/AuthContext';
+import { Plus, Layers, Sliders, ArrowUp, ArrowDown, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 /**
  * PEOPLEPAY360 - SALARY STRUCTURES MODULE
  */
 const SalaryStructuresPage = () => {
+  const { role } = useAuth();
+  const isReadOnly = role === ROLES.HR_PAYROLL_USER;
+
   const [structures, setStructures] = useState([]);
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,11 +57,13 @@ const SalaryStructuresPage = () => {
     setIsSubmitting(true);
     try {
       await payrollApi.createSalaryStructure(formData);
-      setToastMessage('New Salary Structure created');
+      setToastMessage('New Salary Structure created successfully');
       setIsModalOpen(false);
+      setFormData({ name: '', description: '' });
       fetchData();
     } catch (err) {
       console.error('Error creating structure', err);
+      setToastMessage(err.response?.data?.message || err.message || 'Error creating salary structure');
     } finally {
       setIsSubmitting(false);
     }
@@ -103,9 +109,15 @@ const SalaryStructuresPage = () => {
             <Link to="/payroll/salary-rules" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 px-3 py-2 bg-white rounded-lg border border-slate-200 flex items-center gap-1.5">
               <Sliders className="w-4 h-4" /> Manage Salary Rules →
             </Link>
-            <Button variant="primary" icon={Plus} onClick={() => setIsModalOpen(true)}>
-              New Structure
-            </Button>
+            {isReadOnly ? (
+              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-2 rounded-lg border border-slate-200 flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5" /> Read-Only Mode
+              </span>
+            ) : (
+              <Button variant="primary" icon={Plus} onClick={() => setIsModalOpen(true)}>
+                New Structure
+              </Button>
+            )}
           </div>
         }
       />
