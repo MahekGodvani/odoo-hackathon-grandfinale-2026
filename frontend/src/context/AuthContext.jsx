@@ -94,12 +94,16 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     // Authenticate credentials through userApi
     const response = await userApi.login(email, password);
-    const { user: authenticatedUser, token } = response.data;
+    const { user: authenticatedUser, token, refreshToken } = response.data;
     const userWithToken = {
       ...authenticatedUser,
       role: normalizeRoleToDisplay(authenticatedUser.role),
-      token
+      token,
+      refreshToken
     };
+    if (refreshToken) {
+      localStorage.setItem('peoplepay360_refresh_token', refreshToken);
+    }
     setUser(userWithToken);
     return userWithToken;
   };
@@ -108,6 +112,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('peoplepay360_user');
     localStorage.removeItem('peoplepay360_token');
+    localStorage.removeItem('peoplepay360_refresh_token');
   };
 
   // Check if current user role matches permitted roles according to Odoo hierarchy
